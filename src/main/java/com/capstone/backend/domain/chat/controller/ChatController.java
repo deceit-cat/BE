@@ -72,9 +72,9 @@ public class ChatController {
 
     @MessageMapping("/chat/checkMessage")
     public boolean checkMessage(String message){
-        // in local
+        // local
         String requestUrl = "43.202.161.139:8888/" + message;
-        // in server
+        // server
         // String requestUrl = "0.0.0.0:8888/" + message;
 
         HttpHeaders header = new HttpHeaders();
