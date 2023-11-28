@@ -73,6 +73,7 @@ public class ChatController {
 
     public boolean checkMessage(String message){
         String requestUrl = "http://43.202.161.139:8888/" + message;
+        //String requestUrl = "http://0.0.0.0:8888/" + message;
 
         HttpHeaders header = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<>(header);
