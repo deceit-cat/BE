@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.context.event.EventListener;
@@ -72,18 +73,16 @@ public class ChatController {
 
     @MessageMapping("/chat/checkMessage")
     public boolean checkMessage(String message){
-        // local
-        String requestUrl = "43.202.161.139:8888/" + message;
-        // server
-        // String requestUrl = "0.0.0.0:8888/" + message;
+        String requestUrl = "http://43.202.161.139:8888/" + message;
 
         HttpHeaders header = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<>(header);
-        ResponseEntity<Integer> responseEntity = new RestTemplate().exchange(
-                requestUrl, HttpMethod.GET, entity, Integer.class
+        ResponseEntity<JSONObject> responseEntity = new RestTemplate().exchange(
+                requestUrl, HttpMethod.GET, entity, JSONObject.class
         );
 
-        return responseEntity.getBody() == 1;
+        JSONObject j = new JSONObject(responseEntity.getBody());
+        return (Integer) ((ArrayList) j.get("model_result")).get(0) == 1;
     }
     // **************************************************************
 
