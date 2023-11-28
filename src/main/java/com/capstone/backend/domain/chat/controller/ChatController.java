@@ -71,7 +71,6 @@ public class ChatController {
 
     }
 
-    @MessageMapping("/chat/checkMessage")
     public boolean checkMessage(String message){
         String requestUrl = "http://43.202.161.139:8888/" + message;
 
