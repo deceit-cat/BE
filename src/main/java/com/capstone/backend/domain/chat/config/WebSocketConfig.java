@@ -19,6 +19,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     /* 한 클라이언트에서 다른 클라이언트로 메세지를 라우팅하는데 사용될 메세지 브로커 */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/sub"); // 채팅방 구독
+//        registry.enableSimpleBroker("/sub"); // 채팅방 구독
+        registry.enableSimpleBroker("/queue", "/topic");
         registry.setApplicationDestinationPrefixes("/pub"); // 메세지 발행
     }}

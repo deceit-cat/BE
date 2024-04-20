@@ -227,4 +227,13 @@ public class UserService {
         return LocalDate.now();
     }
 
+    public Role getUserRole(String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return user.getRole();
+        } else {
+            throw new IllegalArgumentException("이메일에 해당하는 사용자가 없습니다.");
+        }
+    }
 }

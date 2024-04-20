@@ -1,6 +1,7 @@
 package com.capstone.backend.domain.user.controller;
 
 import com.capstone.backend.domain.user.dto.UserDto;
+import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.service.UserService;
 import com.capstone.backend.global.jwt.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,9 +51,15 @@ public class UserController {
     @PostMapping("/auth/sign-in")
     public ResponseEntity<Map<String, Object>> login(@RequestBody UserDto userDto) {
         Map<String, Object> tokens = userService.loginUser(userDto.getEmail(), userDto.getPassword());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.AUTHORIZATION, (String)tokens.get("accessToken"))
-                .body(null);
+        Role role = userService.getUserRole(userDto.getEmail());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, (String) tokens.get("accessToken"));
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("role", role);
+
+        return ResponseEntity.ok().headers(headers).body(responseBody);
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.*;
 @Slf4j
 @Service
 public class ChatService {
-    private final Map<String, ChatRoom> chatRoomMap;
+    private Map<String, ChatRoom> chatRoomMap;
 
     public ChatService() {
         this.chatRoomMap = new HashMap<>();
