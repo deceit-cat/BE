@@ -17,10 +17,13 @@ public class Child {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "parent_id")
+    @JoinColumn
     private Parent parent;
 
-    @Column(name = "teacher_id")
+    @Column(name = "parent_user_id")
+    private Long parentUserId;
+
+    @Column(name = "teacher_user_id")
     private Long teacherUserId; // 선생님의 User Id
 
     @Column
@@ -41,6 +44,7 @@ public class Child {
         this.childClass = dto.getChildClass();
         this.teacherName = dto.getTeacherName();
         this.parent = parent;
+        this.parentUserId = parent.getUser().getId();
     }
 
     public Long getTeacherUserId() {
@@ -50,6 +54,7 @@ public class Child {
     public void setTeacherUserId(Long teacherUserId) {
         this.teacherUserId = teacherUserId;
     }
+
     public String getTeacherName() {
         return teacherName;
     }

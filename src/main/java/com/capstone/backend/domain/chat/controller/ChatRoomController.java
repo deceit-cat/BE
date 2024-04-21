@@ -1,6 +1,8 @@
 package com.capstone.backend.domain.chat.controller;
 
 import com.capstone.backend.domain.chat.repository.ChatRepository;
+import com.capstone.backend.domain.user.entity.Friend;
+import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +28,25 @@ import java.util.Map;
 @RequestMapping("/chat")
 public class ChatRoomController {
     private final ChatRepository chatRepository;
+    private final FriendRepository friendRepository;
+
+    @GetMapping("/findRoomId")
+    public ResponseEntity<?> findRoomIdByTeacherIdOrParentId(@RequestBody Map<String, Long> requestBody) {
+        Long teacherId = requestBody.get("teacherId");
+        Long parentId = requestBody.get("parentId");
+
+        // teacherID 또는 parentID로 해당하는 roomID 찾기
+        Long roomId = friendRepository.findRoomId(teacherId, parentId);
+
+        if (roomId != null) {
+            // roomID를 body로 반환
+            return ResponseEntity.ok(roomId);
+        } else {
+            // 해당하는 roomID가 없는 경우 예외 처리
+//            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok("roomID가 null입니다.");
+        }
+    }
 
     @GetMapping("/roomList")
     public String goChatRoom(Model model) {
