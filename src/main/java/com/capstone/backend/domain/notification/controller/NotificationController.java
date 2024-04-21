@@ -23,7 +23,7 @@ public class NotificationController {
 
     @GetMapping(value="/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Long userId) {
-        Optional<Teacher> teacherOptioanl = teacherRepository.findById(userId);
+        Optional<Teacher> teacherOptioanl = teacherRepository.findByUserId(userId);
         if (teacherOptioanl.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher의 userId {" + userId + "}의 SSE 페이지가 열리지 않았습니다.");
         }

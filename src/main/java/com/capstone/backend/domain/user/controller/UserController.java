@@ -7,7 +7,6 @@ import com.capstone.backend.global.jwt.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,22 +28,11 @@ public class UserController {
         return "회원가입 성공";
     }
 
-    @Operation(summary = "추가정보 입력")
-    @PostMapping("/auth/add-info")
-    public ResponseEntity<String> addInfo(@RequestBody UserDto userDto, @RequestHeader("Authorization") String token) {
-        try {
-            userService.addInfo(userDto, token);
-            return ResponseEntity.ok("사용자의 추가정보 입력 완료!");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
-
     /**
      * 사용자 로그인을 처리
      *
      * @param userDto 사용자 로그인 정보를 담고 있는 DTO
-     * @return 로그인 성공 여부 및 관련 정보 ( access token )
+     * @return 로그인 성공 여부 및 관련 정보 ( access token, role )
      */
     @Operation(summary = "로그인")
     @PostMapping("/auth/sign-in")
@@ -60,6 +47,17 @@ public class UserController {
         responseBody.put("role", role);
 
         return ResponseEntity.ok().headers(headers).body(responseBody);
+    }
+
+    @Operation(summary = "추가 정보 입력")
+    @PostMapping("/auth/add-info")
+    public ResponseEntity<String> addInfo(@RequestBody UserDto userDto, @RequestHeader("Authorization") String token) {
+        try {
+            userService.addInfo(userDto, token);
+            return ResponseEntity.ok("사용자의 추가정보 입력 완료!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 
     /**

@@ -1,8 +1,6 @@
 package com.capstone.backend.domain.user.entity;
 
 import lombok.*;
-import lombok.experimental.Accessors;
-
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,16 +22,7 @@ public class Parent {
     private int childNum;
 
     @OneToMany(mappedBy = "parent")
-    private List<Child> children = new ArrayList<>(); // 본인 자녀
-
-//    @ManyToMany(mappedBy = "manageParents")
-    @ManyToMany
-    @JoinTable(
-            name = "MANAGES",
-            joinColumns = @JoinColumn(name = "parent_id"),
-            inverseJoinColumns = @JoinColumn(name = "teacher_id")
-    )
-    private List<Teacher> manageTeachers; // 자녀의 선생님 목록
+    private List<Child> children = new ArrayList<>(); // 자녀
 
     public Parent(User user, int childNum) {
         this.user = user;
@@ -47,13 +36,5 @@ public class Parent {
         }
         children.add(child);
         child.setParent(this);
-    }
-
-    public void addManageTeacher(Teacher teacher) {
-        if (manageTeachers == null) {
-            manageTeachers = new ArrayList<>();
-        }
-        manageTeachers.add(teacher);
-        teacher.addManageParent(this);
     }
 }

@@ -4,19 +4,13 @@ import com.capstone.backend.domain.notification.service.NotificationService;
 import com.capstone.backend.domain.user.dto.ChildDto;
 import com.capstone.backend.domain.user.dto.UserDto;
 import com.capstone.backend.domain.user.entity.*;
-import com.capstone.backend.domain.user.repository.ChildRepository;
-import com.capstone.backend.domain.user.repository.ParentRepository;
-import com.capstone.backend.domain.user.repository.TeacherRepository;
-import com.capstone.backend.domain.user.repository.UserLoginCountRepository;
-import com.capstone.backend.domain.user.repository.UserRepository;
+import com.capstone.backend.domain.user.repository.*;
 import com.capstone.backend.global.jwt.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
@@ -35,9 +29,13 @@ public class UserService {
     private final JwtService jwtService;
     private final NotificationService notificationService;
     private final UserLoginCountRepository userLoginCountRepository;
+    private final FriendRepository friendRequestRepository;
 
     private static final String USER_NOT_FOUND_MESSAGE = "해당 사용자를 찾을 수 없습니다: ";
 
+    /** 회원가입
+     *
+     */
     public void signUp(UserDto userDto) throws Exception {
         if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
             throw new Exception("이미 존재하는 이메일입니다.");
@@ -54,24 +52,25 @@ public class UserService {
         userRepository.save(user);
     }
 
+    /**
+     * 추가정보 입력 (이 시점에 Teacher, Parent 유저로 삽입)
+     * @param userDto 기본 유저
+     * @param accessToken 고유한 인증을 위함
+     */
     public void addInfo(UserDto userDto, String accessToken) throws Exception {
         try {
-            if (userDto == null) {
-                throw new IllegalArgumentException("사용자 정보가 null입니다.");
-            }
-
             User user = validateAccessTokenAndGetUser(accessToken);
 
             if (user.getRole() == Role.GUEST) {
                 if (userDto.getRole() == null) {
-                    throw new IllegalArgumentException("사용자 역할 정보가 null입니다.");
+                    throw new IllegalArgumentException("사용자 역할 정보가 null 입니다.");
                 }
 
-                if (userDto.getRole() == Role.PARENT) { // role == PARENT
+                if (userDto.getRole() == Role.PARENT) { // PARENT
                     Parent parent = new Parent(user, userDto.getChildNum());
 
                     for (ChildDto dto : userDto.getChildren()) {
-                        Child child = new Child(parent, dto);
+                        Child child = new Child(parent, dto); // 🧚🏻‍ teacher_id 는 친구요청 수락시 학부모 매핑과 함께 db에 저장
                         childRepository.save(child);
                     }
 
@@ -83,7 +82,7 @@ public class UserService {
                     /* 부모의 자식 정보와 일치하는 선생님을 찾아 친구 추가 요청 알림 보내기*/
                     followRequest(parent);
 
-                } else if (userDto.getRole() == Role.TEACHER) { // role == TEACHER
+                } else if (userDto.getRole() == Role.TEACHER) { // TEACHER
                     Teacher teacher = new Teacher(
                             user,
                             userDto.getTeacherSchool(),
@@ -96,7 +95,8 @@ public class UserService {
                     userRepository.save(user);
 
                     /* Teacher 정보 저장 후 SSE 구독 시작 */
-                    startSSESubscriptionForTeacher(teacher);
+//                    startSSESubscriptionForTeacher(teacher);
+
                 } else {
                     throw new Exception("이미 유저 구분이 설정되었습니다.");
                 }
@@ -107,6 +107,38 @@ public class UserService {
             e.printStackTrace();
             throw e;
         }
+    }
+
+    /**
+     * 부모의 자식 정보와 일치하는 선생님을 찾아 친구 추가 요청 알림 보내기
+     * @param parent 부모 정보 가져오기
+     */
+    public void followRequest(Parent parent) {
+        List<Child> children = parent.getChildren();
+
+        for (Child child : children) {
+            Teacher teacher = teacherRepository.findByTeacherSchoolAndTeacherClass(child.getChildSchool(), child.getChildClass());
+
+            if (teacher != null && teacher.getTeacherName().equals(child.getTeacherName())) {
+                Long teacherUserId = teacher.getUser().getId();
+                if (teacherUserId == null) {
+                    System.out.println("teacher 의 userId 가 null 입니다. teacher: " + teacher);
+                } else {
+                    System.out.println("teacher 의 userId : " + teacherUserId);
+                    // 부모와 선생님 사이의 친구 추가 요청 알림을 보냅니다.
+//                notificationService.followRequest(parent.getUser(), teacher.getUser());
+                    notificationService.notify(teacherUserId, child + "의 학부모 " + parent.getUser().getName() + "님의 친구 추가 요청을 수락하시겠습니까?");
+                }
+            }
+        }
+    }
+
+    /**
+     * Teacher 정보 저장 후 SSE 구독 시작
+     * @param teacher
+     */
+    public void startSSESubscriptionForTeacher(Teacher teacher) {
+        notificationService.startSSESubscriptionForTeacher(teacher);
     }
 
     public User validateAccessTokenAndGetUser(String accessToken) throws Exception {
@@ -124,31 +156,6 @@ public class UserService {
         }
     }
 
-    public void followRequest(Parent parent) {
-        List<Child> children = parent.getChildren();
-
-        for (Child child : children) {
-            Teacher teacher = teacherRepository.findByTeacherSchoolAndTeacherClass(child.getChildSchool(), child.getChildClass());
-
-            if (teacher != null && teacher.getTeacherName().equals(child.getTeacherName())) {
-                Long teacherUserId = teacher.getUser().getId();
-                if (teacherUserId == null) {
-                    // teacher의 userId가 null이면 예외 상황으로 간주하여 로그를 출력합니다.
-                    System.out.println("teacher의 userId가 null입니다. teacher: " + teacher);
-                } else {
-                    System.out.println("teacher의 userId: " + teacherUserId);
-                    // 부모와 선생님 사이의 친구 추가 요청 알림을 보냅니다.
-//                notificationService.followRequest(parent.getUser(), teacher.getUser());
-                    notificationService.notify(teacherUserId, "친구 추가 요청: " + parent.getUser().getName());
-                }
-            }
-        }
-    }
-
-    public void startSSESubscriptionForTeacher(Teacher teacher) {
-        notificationService.startSSESubscriptionForTeacher(teacher);
-    }
-
     public Map<String, Object> loginUser(String email, String password) {
 
         User user = validateUserExistsByEmail(email);
@@ -163,13 +170,11 @@ public class UserService {
 
 
     private Map<String, Object> generateTokens(User user) {
-
         Map<String, Object> tokens = new HashMap<>();
         tokens.put("accessToken", jwtService.createAccessToken(user.getEmail(), user.getName(), user.getRole()));
         tokens.put("refreshToken", jwtService.createRefreshToken());
         return tokens;
     }
-
 
     public void updateLoginCount(User user) {
         LocalDate today = getToday();

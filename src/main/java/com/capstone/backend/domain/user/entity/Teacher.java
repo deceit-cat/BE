@@ -26,12 +26,6 @@ public class Teacher {
     @Column
     private String teacherClass; // 학급
 
-    @OneToMany(mappedBy = "teacher")
-    private List<Child> children = new ArrayList<>(); // 소속 학생
-
-    @ManyToMany
-    private List<Parent> manageParents; // 학생 부모님 목록
-
     public Teacher(User user, String teacherSchool, String teacherClass) {
         this.user = user;
         this.user.setRole(Role.TEACHER);
@@ -41,13 +35,5 @@ public class Teacher {
 
     public String getTeacherName() {
         return this.user.getName();
-    }
-
-    public void addManageParent(Parent parent) {
-        if (manageParents == null) {
-            manageParents = new ArrayList<>();
-        }
-        manageParents.add(parent);
-        parent.addManageTeacher(this);
     }
 }

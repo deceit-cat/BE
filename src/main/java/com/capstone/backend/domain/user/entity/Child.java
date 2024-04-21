@@ -5,12 +5,13 @@ import lombok.*;
 
 import javax.persistence.*;
 
-
 @Table(name = "CHILDS")
 @Entity
 @Getter
 @Setter
 public class Child {
+    public Child() { }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,9 +20,8 @@ public class Child {
     @JoinColumn(name = "parent_id")
     private Parent parent;
 
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    private Teacher teacher;
+    @Column(name = "teacher_id")
+    private Long teacherUserId; // 선생님의 User Id
 
     @Column
     private String childName; // 자녀 이름
@@ -42,14 +42,14 @@ public class Child {
         this.teacherName = dto.getTeacherName();
         this.parent = parent;
     }
-//
-//    public Child(Teacher teacher, ChildDto dto) {
-//        this.childName = dto.getChildName();
-//        this.childSchool = dto.getChildSchool();
-//        this.childClass = dto.getChildClass();
-//        this.teacher = teacher;
-//    }
 
+    public Long getTeacherUserId() {
+        return this.teacherUserId;
+    }
+
+    public void setTeacherUserId(Long teacherUserId) {
+        this.teacherUserId = teacherUserId;
+    }
     public String getTeacherName() {
         return teacherName;
     }

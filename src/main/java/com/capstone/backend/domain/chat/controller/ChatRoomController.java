@@ -37,10 +37,16 @@ public class ChatRoomController {
     // 채팅방 생성
     // 채팅방 생성 후 다시 / 로 return
     @PostMapping("/createRoom")
-    public String createRoom(@RequestParam String name, RedirectAttributes rttr) {
-        ChatRoom room = chatRepository.createChatRoom(name);
-        log.info("CREATE Chat Room {}", room);
-        rttr.addFlashAttribute("roomName", room);
+    public String createRoom(@RequestBody Map<String, Long> requestBody, RedirectAttributes rttr) {
+        Long teacherUserId = requestBody.get("teacherUserId");
+        Long parentUserId = requestBody.get("parentUserId");
+
+//        ChatRoom room = chatRepository.createChatRoom();
+//        log.info("CREATE Chat Room {}", room);
+
+//        saveChatRoomToFriendTable(room.getUUID());
+
+//        rttr.addFlashAttribute("roomName", room);
         return "redirect:/list";
     }
 

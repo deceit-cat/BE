@@ -17,6 +17,13 @@ configurations {
 	}
 }
 
+dependencies {
+	implementation 'io.netty:netty-resolver-dns-native-macos:4.1.104.Final:osx-aarch_64'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+}
+
+
 repositories {
 	mavenCentral()
 	maven { url 'https://repo.spring.io/milestone' }

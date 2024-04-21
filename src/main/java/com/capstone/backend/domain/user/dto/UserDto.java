@@ -10,15 +10,17 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 public class UserDto {
+    // User
     private String name;
     private String email;
     private String password;
+    private Role role; // GUEST, TEACHER, PARENT
 
-    private Role role; // GUEST, TEACHER, PARNET
-
+    // Teacher
     private String teacherSchool;
     private String teacherClass;
 
+    // Parent
     private int childNum;
     private List<ChildDto> children;
 
