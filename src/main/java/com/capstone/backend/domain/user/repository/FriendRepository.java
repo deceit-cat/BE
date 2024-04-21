@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     @Query("SELECT f.roomId FROM Friend f WHERE f.teacherUserId = :teacherUserId OR f.parentUserId = :parentUserId")
     Long findRoomId(@Param("teacherUserId") Long teacherUserId, @Param("parentUserId") Long parentUserId);
+
+    Friend findByTeacherUserIdOrParentUserId(Long teacherUserId, Long parentUserId);
 }

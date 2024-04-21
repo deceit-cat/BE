@@ -29,6 +29,15 @@ public class FriendService {
         friendRepository.save(friend);
     }
 
+    public void saveUUID(String roomId, Long teacherUserId, Long parentUserId) {
+        Friend friend = friendRepository.findByTeacherUserIdOrParentUserId(teacherUserId, parentUserId);
+
+        if (friend != null && (friend.getTeacherUserId().equals(teacherUserId) || friend.getParentUserId().equals(parentUserId))) {
+            friend.setRoomId(roomId);
+            friendRepository.save(friend);
+        }
+    }
+
     public Friend saveFriend(Friend friend) {
         return friendRepository.save(friend);
     }

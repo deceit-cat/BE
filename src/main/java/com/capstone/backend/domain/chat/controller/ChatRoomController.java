@@ -1,14 +1,21 @@
 package com.capstone.backend.domain.chat.controller;
 
 import com.capstone.backend.domain.chat.repository.ChatRepository;
+import com.capstone.backend.domain.user.dto.UserDto;
 import com.capstone.backend.domain.user.entity.Friend;
+import com.capstone.backend.domain.user.entity.Role;
+import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.FriendRepository;
+import com.capstone.backend.domain.user.repository.UserRepository;
+import com.capstone.backend.domain.user.service.FriendService;
+import com.capstone.backend.global.jwt.service.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -18,17 +25,54 @@ import com.capstone.backend.domain.chat.service.ChatService;
 import com.capstone.backend.domain.chat.dto.ChatRoom;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 @Tag(name = "채팅방", description = "생성, 조회, 입장")
-@RequestMapping("/chat")
 public class ChatRoomController {
+    private final ChatService chatService;
     private final ChatRepository chatRepository;
+    private final UserRepository userRepository;
     private final FriendRepository friendRepository;
+    private final FriendService friendService;
+    private final JwtService jwtService;
+
+    @PostMapping("/createRoom")
+    public String createRoom(@RequestBody Map<String, Long> requestBody,
+                             @RequestHeader("Authorization") String accessToken,
+                             RedirectAttributes rttr) {
+
+        Long teacherUserId = requestBody.get("teacherUserId");
+        Long parentUserId = requestBody.get("parentUserId");
+
+        if (jwtService.isTokenValid(accessToken)) { // AccessToken이 유효한 경우
+            String roomId = chatService.createChatRoom();
+            log.info("채팅방 생성 : {}", roomId);
+
+            Optional<String> userEmail = jwtService.extractEmail(accessToken);
+            if (userEmail.isPresent()) {
+                Optional<User> userOptional = userRepository.findByEmail(userEmail.get());
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    if (user.getId().equals(teacherUserId) || user.getId().equals(parentUserId)) {
+                        // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
+                        // 채팅방 정보를 저장하고 리다이렉트
+                        friendService.saveUUID(roomId, teacherUserId, parentUserId);
+                        rttr.addFlashAttribute("roomId", roomId);
+                        return "redirect:/list";
+                    }
+                }
+            }
+            // 유효한 AccessToken이지만 사용자 ID가 일치하지 않는 경우
+            return "redirect:/error";
+        } else {
+            // AccessToken이 유효하지 않은 경우에는 처리할 작업을 추가합니다.
+            // 예를 들어, 로그인 페이지로 리다이렉트하거나 에러 메시지를 반환할 수 있습니다.
+            return "redirect:/login";
+        }
+    }
 
     @GetMapping("/findRoomId")
     public ResponseEntity<?> findRoomIdByTeacherIdOrParentId(@RequestBody Map<String, Long> requestBody) {
@@ -48,65 +92,57 @@ public class ChatRoomController {
         }
     }
 
-    @GetMapping("/roomList")
-    public String goChatRoom(Model model) {
-        model.addAttribute("list", chatRepository.findAllRoom());
-        log.info("SHOW ALL CHATROOM LIST {}", chatRepository.findAllRoom());
-        return "채팅 방 리스트";
+    @Operation(summary = "전체 채팅방 조회")
+    @GetMapping("/showAllChatRooms")
+    public List<ChatRoom> showAllChatRooms() {
+        try {
+            List<ChatRoom> chatRooms = chatService.findAllRoom();
+            log.info("SHOW ALL CHATROOM LIST : {}", chatService.findAllRoom());
+            return chatRooms;
+        } catch (Exception e) {
+            log.error("전체 채팅방 조회에서 에러 발생 : {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "전체 채팅방 조회에 실패했습니다.");
+        }
     }
 
-    // 채팅방 생성
-    // 채팅방 생성 후 다시 / 로 return
-    @PostMapping("/createRoom")
-    public String createRoom(@RequestBody Map<String, Long> requestBody, RedirectAttributes rttr) {
-        Long teacherUserId = requestBody.get("teacherUserId");
-        Long parentUserId = requestBody.get("parentUserId");
-
-//        ChatRoom room = chatRepository.createChatRoom();
-//        log.info("CREATE Chat Room {}", room);
-
-//        saveChatRoomToFriendTable(room.getUUID());
-
-//        rttr.addFlashAttribute("roomName", room);
-        return "redirect:/list";
-    }
+//    @GetMapping("/userChatRooms")
+//    public String getUserChatRooms(@RequestHeader("Authorization") String accessToken, Model model) {
+//        // 액세스 토큰을 검증하고 유효한 사용자의 ID를 가져옵니다.
+//        Optional<String> userEmail = jwtService.extractEmail(accessToken);
+//
+//        if (userEmail.isPresent()) {
+//            Optional<User> userOptional = userRepository.findByEmail(userEmail.get());
+//
+//            if (userOptional.isPresent()) {
+//                Long userId = userOptional.get().getId();
+//
+//                // 해당 사용자의 채팅방 목록을 가져옵니다.
+//                List<ChatRoom> userChatRooms = chatRepository.findUserChatRooms(userId);
+//
+//                // 가져온 채팅방 목록을 모델에 추가하여 뷰에 전달합니다.
+//                model.addAttribute("chatRooms", userChatRooms);
+//
+//                // 로그에 채팅방 목록 정보를 남깁니다.
+//                log.info("User {}'s Chat Rooms: {}", userId, userChatRooms);
+//
+//                // 뷰 이름을 반환하여 해당하는 뷰를 표시합니다.
+//                return "user_chat_rooms"; // 적절한 뷰 이름을 사용하세요.
+//            }
+//        }
+        // 해당 사용자를 찾을 수 없는 경우 빈 목록을 모델에 추가하여 뷰에 전달합니다.
+//        model.addAttribute("chatRooms", Collections.emptyList());
+//
+//        // 해당하는 뷰를 표시합니다.
+//        return "user_chat_rooms"; // 적절한 뷰 이름을 사용하세요.
+//    }
 
     // 채팅방 입장 화면
     // 파라미터로 넘어오는 roomId 를 확인후 해당 roomId 를 기준으로
     // 채팅방을 찾아서 클라이언트를 chatroom 으로 보낸다.
     @GetMapping("/enterRoom")
-    public String roomDetail(Model model, @RequestParam String roomId){
+    public String roomDetail(Model model, @RequestParam String roomId) {
         log.info("roomId {}", roomId);
-        model.addAttribute("room", chatRepository.findRoomById(roomId));
+        model.addAttribute("room", chatService.findRoomById(roomId));
         return "chatroom";
     }
-
-//    @Operation(summary = "채팅방 생성")
-//    @PostMapping("/createRoom")
-//    public ResponseEntity<Object> createRoom(@RequestBody Map<String, String> requestBody) {
-//        String name = requestBody.get("name");
-////        ChatRoom room = chatService.createRoom(name);
-//        log.debug("채팅방 생성 중... ");
-//
-//        if (room != null) {
-//            log.debug("채팅방 생성 성공! {}", room);
-//            return ResponseEntity.ok().body(Map.of("roomId", room.getRoomId()));
-//        } else {
-//            log.error("채팅방 생성 실패 :(");
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "채팅방 생성에 실패했습니다. 요청 데이터를 확인해주세요."));
-//        }
-//    }
-
-//    @Operation(summary = "채팅방 조회")
-//    @GetMapping("/list")
-//    public List<ChatRoom> roomList() {
-//        try {
-//            List<ChatRoom> rooms = chatService.findAllRoom();
-//            log.debug("모든 채팅방 조회 {}", rooms);
-//            return rooms;
-//        } catch (Exception e) {
-//            log.error("채팅방 조회 중 에러 발생 : {}", e.getMessage());
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "채팅방 조회에 실패했습니다.");
-//        }
-//    }
 }
