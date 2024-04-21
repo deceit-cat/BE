@@ -35,6 +35,6 @@ public class Parent {
             children = new ArrayList<>();
         }
         children.add(child);
-        child.setParentUserId(this.getUser().getId());
+        child.setParent(this);
     }
 }
