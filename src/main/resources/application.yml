@@ -58,12 +58,14 @@ spring:
       hibernate:
         format_sql: true # SQL pretty print
     database: mysql
+    generate-ddl: false
+    open-in-view: false
   main:
     allow-circular-references: true
 
 logging.level:
-  org.hibernate.SQL: debug
-  com.capstone.backend: debug
+  org.hibernate.SQL: INFO
+  com.capstone.backend: DEBUG
 
 ### JWT ###
 jwt:

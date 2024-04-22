@@ -95,7 +95,7 @@ public class UserService {
                     userRepository.save(user);
 
                     /* Teacher 정보 저장 후 SSE 구독 시작 */
-//                    startSSESubscriptionForTeacher(teacher);
+                    startSSE(teacher);
 
                 } else {
                     throw new Exception("이미 유저 구분이 설정되었습니다.");
@@ -134,11 +134,11 @@ public class UserService {
     }
 
     /**
-     * Teacher 정보 저장 후 SSE 구독 시작
+     * SSE 구독 시작
      * @param teacher
      */
-    public void startSSESubscriptionForTeacher(Teacher teacher) {
-        notificationService.startSSESubscriptionForTeacher(teacher);
+    public void startSSE(Teacher teacher) {
+        notificationService.startSSE(teacher);
     }
 
     public User validateAccessTokenAndGetUser(String accessToken) throws Exception {

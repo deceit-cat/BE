@@ -22,7 +22,7 @@ import java.io.IOException;
 
 /**
  * Jwt 인증 필터
- * "/auth/login" 이외의 URI 요청이 왔을 때 처리하는 필터
+ * "/auth/sign-in" 이외의 URI 요청이 왔을 때 처리하는 필터
  *
  * 기본적으로 사용자는 요청 헤더에 AccessToken만 담아서 요청
  * AccessToken 만료 시에만 RefreshToken을 요청 헤더에 AccessToken과 함께 요청
@@ -37,17 +37,17 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
-    private static final String NO_CHECK_URL = "/login"; // "/login"으로 들어오는 요청은 Filter 작동 X
+    private static final String NO_CHECK_URL = "/auth/sign-in"; // "/auth/sign-in"으로 들어오는 요청은 Filter 작동 X
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
 
-    private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
+    private final GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         if (request.getRequestURI().equals(NO_CHECK_URL) || request.getRequestURI().startsWith("/api-docs")) {
-            filterChain.doFilter(request, response); // "/login" 요청이 들어오면, 다음 필터 호출
+            filterChain.doFilter(request, response); // "/auth/sign-in" 요청이 들어오면, 다음 필터 호출
             return; // return으로 이후 현재 필터 진행 막기 (안해주면 아래로 내려가서 계속 필터 진행시킴)
         }
 
@@ -116,9 +116,12 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
         log.info("checkAccessTokenAndAuthentication() 호출");
         jwtService.extractAccessToken(request)
                 .filter(jwtService::isTokenValid)
-                .ifPresent(accessToken -> jwtService.extractEmail(accessToken)
-                        .ifPresent(email -> userRepository.findByEmail(email)
-                                .ifPresent(this::saveAuthentication)));
+                .ifPresent(accessToken -> {
+                    log.info("유효한 Access Token 확인됨");
+                    jwtService.extractEmail(accessToken)
+                            .ifPresent(email -> userRepository.findByEmail(email)
+                                    .ifPresent(this::saveAuthentication));
+                });
 
         filterChain.doFilter(request, response);
     }
