@@ -1,28 +1,22 @@
 package com.capstone.backend.domain.chat.controller;
 
 import com.capstone.backend.domain.chat.repository.ChatRepository;
-import com.capstone.backend.domain.user.dto.UserDto;
-import com.capstone.backend.domain.user.entity.Friend;
-import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.capstone.backend.domain.user.repository.UserRepository;
 import com.capstone.backend.domain.user.service.FriendService;
 import com.capstone.backend.global.jwt.service.JwtService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import com.capstone.backend.domain.chat.service.ChatService;
-import com.capstone.backend.domain.chat.dto.ChatRoom;
+import com.capstone.backend.domain.chat.dto.ChatRoomDto;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
@@ -48,8 +42,8 @@ public class ChatRoomController {
         Long parentUserId = requestBody.get("parentUserId");
 
         if (jwtService.isTokenValid(accessToken)) { // AccessToken이 유효한 경우
-            String roomId = chatService.createChatRoom();
-            log.info("채팅방 생성 : {}", roomId);
+//            String roomId = chatService.createChatRoom();
+//            log.info("채팅방 생성 : {}", roomId);
 
             Optional<String> userEmail = jwtService.extractEmail(accessToken);
             if (userEmail.isPresent()) {
@@ -59,8 +53,8 @@ public class ChatRoomController {
                     if (user.getId().equals(teacherUserId) || user.getId().equals(parentUserId)) {
                         // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
                         // 채팅방 정보를 저장하고 리다이렉트
-                        friendService.saveUUID(roomId, teacherUserId, parentUserId);
-                        rttr.addFlashAttribute("roomId", roomId);
+//                        friendService.saveUUID(roomId, teacherUserId, parentUserId);
+//                        rttr.addFlashAttribute("roomId", roomId);
                         return "redirect:/list";
                     }
                 }
@@ -94,9 +88,9 @@ public class ChatRoomController {
 
     @Operation(summary = "전체 채팅방 조회")
     @GetMapping("/showAllChatRooms")
-    public List<ChatRoom> showAllChatRooms() {
+    public List<ChatRoomDto> showAllChatRooms() {
         try {
-            List<ChatRoom> chatRooms = chatService.findAllRoom();
+            List<ChatRoomDto> chatRooms = chatService.findAllRoom();
             log.info("SHOW ALL CHATROOM LIST : {}", chatService.findAllRoom());
             return chatRooms;
         } catch (Exception e) {

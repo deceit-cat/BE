@@ -1,8 +1,7 @@
 package com.capstone.backend.domain.chat.service;
 
-import com.capstone.backend.domain.chat.dto.ChatRoom;
+import com.capstone.backend.domain.chat.dto.ChatRoomDto;
 import com.capstone.backend.domain.chat.repository.ChatRepository;
-import com.capstone.backend.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -17,7 +16,7 @@ import java.util.*;
 public class ChatService {
 
     private final ChatRepository chatRepository;
-    private Map<String, ChatRoom> chatRoomMap;
+    private Map<String, ChatRoomDto> chatRoomMap;
 
     public ChatService(ChatRepository chatRepository) {
         this.chatRepository = chatRepository;
@@ -25,39 +24,39 @@ public class ChatService {
     }
 
     /* 채팅방 생성 */
-    public ChatRoom createRoom() {
-        ChatRoom chatRoom = new ChatRoom();
+    public ChatRoomDto createRoom() {
+        ChatRoomDto chatRoom = new ChatRoomDto();
         chatRoom.setRoomId(UUID.randomUUID().toString());
         chatRoomMap.put(chatRoom.getRoomId(), chatRoom); // Hashmap 에 새로운 채팅방 저장
         return chatRoom;
     }
 
-    public String createChatRoom() {
-        ChatRoom chatRoom = new ChatRoom().create();
-        String roomId = chatRoom.getRoomId();
-
-        // map 에 채팅룸 아이디와 만들어진 채팅룸을 저장장
-        chatRoomMap.put(roomId, chatRoom);
-
-        return roomId;
-    }
+//    public String createChatRoom() {
+//        ChatRoomDto chatRoom = new ChatRoomDto().create();
+//        String roomId = chatRoom.getRoomId();
+//
+//        // map 에 채팅룸 아이디와 만들어진 채팅룸을 저장장
+//        chatRoomMap.put(roomId, chatRoom);
+//
+//        return roomId;
+//    }
 
     // 채팅방 인원 +1
     public void plusUserCnt(String roomId){
-        ChatRoom room = chatRoomMap.get(roomId);
+        ChatRoomDto room = chatRoomMap.get(roomId);
         room.setUserCount(room.getUserCount()+1);
         chatRoomMap.put(roomId, room);
     }
 
     // 채팅방 인원 -1
     public void minusUserCnt(String roomId){
-        ChatRoom room = chatRoomMap.get(roomId);
+        ChatRoomDto room = chatRoomMap.get(roomId);
         room.setUserCount(room.getUserCount()-1);
         chatRoomMap.put(roomId, room);
     }
 
     // roomID 기준으로 채팅방 찾기
-    public ChatRoom findRoomById(String roomId) {
+    public ChatRoomDto findRoomById(String roomId) {
         return chatRoomMap.get(roomId);
     }
 
@@ -149,9 +148,9 @@ public class ChatService {
 //    }
 
     // 전체 채팅방 리스트 조회
-    public List<ChatRoom> findAllRoom(){
+    public List<ChatRoomDto> findAllRoom(){
         // 최근 순으로 채팅방 정렬 후 반환
-        List<ChatRoom> chatRooms = new ArrayList<>(chatRoomMap.values());
+        List<ChatRoomDto> chatRooms = new ArrayList<>(chatRoomMap.values());
         Collections.reverse(chatRooms);
         return chatRooms;
     }
