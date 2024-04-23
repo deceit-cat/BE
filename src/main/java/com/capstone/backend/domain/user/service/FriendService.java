@@ -47,30 +47,19 @@ public class FriendService {
         friendRepository.save(friend);
     }
 
+    /**
+     * roomId 로 채팅방 참여 유저 리스트 조회시 사용
+     * @param roomId
+     * @return
+     */
     public boolean roomExists(String roomId) {
         return friendRepository.findByRoomId(roomId).isPresent();
     }
 
     /**
      * parentId로 teacherId 찾기
-     * @param parentUserId
-     * @return
      */
-    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
-        return friendRepository.findTeacherUserIdAsParent(parentUserId);
-    }
-
-    public String findRoomId(List<Long> teacherUserIds, Long parentUserId) {
-        for (Long teacherUserId : teacherUserIds) {
-            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
-            if (roomIdOptional.isPresent()) {
-                return roomIdOptional.get();
-            }
-        }
-        return null;
-    }
-
-    public List<Long> findTeacherUserIds(Parent parent) {
+    public List<Long> findTeacherUserIdsAsParent(Parent parent) {
         List<Long> childTeacherIds = getChildteacherIds(parent);
         List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parent.getUser().getId());
         List<Long> matchingTeacherIds = new ArrayList<>();
@@ -84,6 +73,32 @@ public class FriendService {
         }
         return matchingTeacherIds;
     }
+//    public List<Long> findTeacherUserIds(Parent parent) {
+//        List<Long> childTeacherIds = getChildteacherIds(parent);
+//        List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parent.getUser().getId());
+//        List<Long> matchingTeacherIds = new ArrayList<>();
+//
+//        // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
+//        for (Long childTeacherId : childTeacherIds) {
+//            if (friendTeacherIds.contains(childTeacherId)) {
+//                // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
+//                matchingTeacherIds.add(childTeacherId);
+//            }
+//        }
+//        return matchingTeacherIds;
+//    }
+
+    public String findRoomId(List<Long> teacherUserIds, Long parentUserId) {
+        for (Long teacherUserId : teacherUserIds) {
+            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
+            if (roomIdOptional.isPresent()) {
+                return roomIdOptional.get();
+            }
+        }
+        return null;
+    }
+
+
 
     private List<Long> getChildteacherIds(Parent parent) {
         // 여기에 부모의 자식 목록에서 선생님의 ID를 가져오는 로직을 구현합니다.

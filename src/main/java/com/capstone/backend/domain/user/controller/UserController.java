@@ -24,8 +24,6 @@ public class UserController {
     private final UserService userService;
     private final ChatRoomService chatRoomService;
 
-
-
     @Operation(summary = "회원가입")
     @PostMapping("/auth/sign-up")
     public String singUp(@RequestBody UserDto userDto) throws Exception {
@@ -44,12 +42,14 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> login(@RequestBody UserDto userDto) {
         Map<String, Object> tokens = userService.loginUser(userDto.getEmail(), userDto.getPassword());
         Role role = userService.getUserRole(userDto.getEmail());
+        Long userId = userService.getUserId(userDto.getEmail());
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.AUTHORIZATION, (String) tokens.get("accessToken"));
 
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("role", role);
+        responseBody.put("userId", userId);
 
         return ResponseEntity.ok().headers(headers).body(responseBody);
     }

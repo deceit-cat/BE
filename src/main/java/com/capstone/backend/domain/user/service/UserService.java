@@ -289,4 +289,14 @@ public class UserService {
             throw new IllegalArgumentException("이메일에 해당하는 사용자가 없습니다.");
         }
     }
+
+    public Long getUserId(String email) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return user.getId();
+        } else {
+            throw new RuntimeException("해당하는 이메일을 가진 사용자를 찾을 수 없습니다.");
+        }
+    }
 }

@@ -90,31 +90,32 @@ public class ChatRoomController {
     }
 
     /**
-     * 특정 방 번호 알아내기
+     * 부모의 ID 를 이용해 선생님과 연결된 방 번호 알아내기
      * @param requestBody
      * @return
      */
-    @GetMapping("/findRoomId")
-    public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
-        Long parentUserId = requestBody.get("parentId");
-        try {
-            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId);
-
-            if (teacherUserIds.isEmpty()) {
-                return ResponseEntity.ok("부모와 선생님이 연결되지 않았습니다.");
-            }
-
-            String roomId = friendService.findRoomId(teacherUserIds, parentUserId); // 🧚🏻‍ 이 코드 검토하기
-
-            if (roomId != null) {
-                return ResponseEntity.ok(roomId);
-            } else {
-                return ResponseEntity.ok("roomId 가 null 입니다.");
-            }
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+//    @GetMapping("/findRoomId")
+//    public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
+//        // 부모의 아이디 가져오기
+//        Long parentUserId = requestBody.get("parentId");
+//        try {
+//            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId);
+//
+//            if (teacherUserIds.isEmpty()) {
+//                return ResponseEntity.ok("부모와 선생님이 연결되지 않았습니다.");
+//            }
+//
+//            String roomId = friendService.findRoomId(teacherUserIds, parentUserId); // 🧚🏻‍ 이 코드 검토하기
+//
+//            if (roomId != null) {
+//                return ResponseEntity.ok(roomId);
+//            } else {
+//                return ResponseEntity.ok("roomId 가 null 입니다.");
+//            }
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
     /**
      * 특정 채팅방 인원 조회
@@ -129,6 +130,11 @@ public class ChatRoomController {
      * 유저의 채팅방 리스트 반환
      */
 
+    /**
+     * roomId 로 채팅방에 참여 중인 유저 리스트 조회
+     * @param roomId
+     * @return
+     */
     @Operation(summary = "roomId 로 채팅방 참여 유저 리스트 조회")
     @GetMapping("/findUsers/{roomId}")
     public ResponseEntity<?> getUserListByRoomId(@PathVariable String roomId) {
