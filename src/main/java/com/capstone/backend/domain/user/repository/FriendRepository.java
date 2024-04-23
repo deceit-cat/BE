@@ -6,10 +6,38 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
-    @Query("SELECT f.roomId FROM Friend f WHERE f.teacherUserId = :teacherUserId OR f.parentUserId = :parentUserId")
-    Long findRoomId(@Param("teacherUserId") Long teacherUserId, @Param("parentUserId") Long parentUserId);
+    /**
+     * roomId로 room 존재 여부 확인
+     * @param roomId
+     * @return
+     */
+    Optional<Friend> findByRoomId(String roomId);
 
-    Friend findByTeacherUserIdOrParentUserId(Long teacherUserId, Long parentUserId);
+    /**
+     * teacher, parent 유저로 roomId 찾기
+     * @param teacherUserId
+     * @param parentUserId
+     * @return
+     */
+    @Query("SELECT f.roomId FROM Friend f WHERE f.teacherUserId = :teacherUserId AND f.parentUserId = :parentUserId")
+    Optional<String> findRoomId(@Param("teacherUserId") Long teacherUserId, @Param("parentUserId") Long parentUserId);
+
+    /**
+     * teacherUserId와 parentUserId가 모두 일치하는 행을 찾습니다.
+     * @param teacherUserId
+     * @param parentUserId
+     * @return
+     */
+    Optional<Friend> findByTeacherUserIdAndParentUserId(Long teacherUserId, Long parentUserId);
+
+    /**
+     * parent_user_id로 teacher_user_id 찾기
+     */
+    @Query("SELECT DISTINCT f.teacherUserId FROM Friend f WHERE f.parentUserId = :parentUserId")
+    List<Long> findTeacherUserIdAsParent(@Param("parentUserId") Long parentUserId);
 }

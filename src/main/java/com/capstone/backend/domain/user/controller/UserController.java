@@ -1,5 +1,6 @@
 package com.capstone.backend.domain.user.controller;
 
+import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.dto.UserDto;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.service.UserService;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,6 +22,9 @@ import java.util.Map;
 @Tag(name = "유저 관리", description = "회원가입,로그인, 추가정보 입력, 로그인 통계 조회, 전체 사용자 수 조회")
 public class UserController {
     private final UserService userService;
+    private final ChatRoomService chatRoomService;
+
+
 
     @Operation(summary = "회원가입")
     @PostMapping("/auth/sign-up")

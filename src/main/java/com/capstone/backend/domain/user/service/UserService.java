@@ -1,5 +1,8 @@
 package com.capstone.backend.domain.user.service;
 
+import com.capstone.backend.domain.chat.entity.ChatRoom;
+import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
+import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.notification.service.NotificationService;
 import com.capstone.backend.domain.user.dto.ChildDto;
 import com.capstone.backend.domain.user.dto.UserDto;
@@ -7,30 +10,56 @@ import com.capstone.backend.domain.user.entity.*;
 import com.capstone.backend.domain.user.repository.*;
 import com.capstone.backend.global.jwt.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.sql.Array;
 import java.time.LocalDate;
 import java.time.temporal.IsoFields;
 import java.util.*;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final UserLoginCountRepository userLoginCountRepository;
+    private final TeacherRepository teacherRepository;
     private final ParentRepository parentRepository;
     private final ChildRepository childRepository;
-    private final TeacherRepository teacherRepository;
+    private final FriendRepository friendRepository;
+    private final ChatRoomRepository chatRoomRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final NotificationService notificationService;
-    private final UserLoginCountRepository userLoginCountRepository;
-    private final FriendRepository friendRequestRepository;
 
+    @Autowired
+    public UserService(UserRepository userRepository,
+                       UserLoginCountRepository userLoginCountRepository,
+                       TeacherRepository teacherRepository,
+                       ParentRepository parentRepository,
+                       ChildRepository childRepository,
+                       FriendRepository friendRepository,
+                       ChatRoomRepository chatRoomRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       NotificationService notificationService
+                       ) {
+        this.userRepository = userRepository;
+        this.userLoginCountRepository = userLoginCountRepository;
+        this.teacherRepository = teacherRepository;
+        this.parentRepository = parentRepository;
+        this.childRepository = childRepository;
+        this.friendRepository = friendRepository;
+        this.chatRoomRepository = chatRoomRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.notificationService = notificationService;
+    }
     private static final String USER_NOT_FOUND_MESSAGE = "해당 사용자를 찾을 수 없습니다: ";
 
     /** 회원가입
@@ -154,6 +183,25 @@ public class UserService {
         } else {
             throw new Exception("유효하지 않은 토큰입니다.");
         }
+    }
+
+    /**
+     * userId로 TeacherUser 찾기
+     *
+     */
+    public Teacher findTeacherById(Long teacherUserId) {
+        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
+        return teacherOptional.orElse(null);
+    }
+
+    public Parent findParentById(Long parentUserId) {
+        Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
+        return parentOptional.orElse(null);
+    }
+
+    public User findUserById(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        return userOptional.orElse(null);
     }
 
     public Map<String, Object> loginUser(String email, String password) {

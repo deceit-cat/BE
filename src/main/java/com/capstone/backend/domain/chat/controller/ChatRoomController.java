@@ -1,15 +1,20 @@
 package com.capstone.backend.domain.chat.controller;
 
+import com.capstone.backend.domain.chat.entity.ChatRoom;
 import com.capstone.backend.domain.chat.repository.ChatRepository;
+import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
+import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.capstone.backend.domain.user.repository.UserRepository;
 import com.capstone.backend.domain.user.service.FriendService;
 import com.capstone.backend.global.jwt.service.JwtService;
+import com.google.api.client.util.store.AbstractMemoryDataStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -19,6 +24,7 @@ import com.capstone.backend.domain.chat.service.ChatService;
 import com.capstone.backend.domain.chat.dto.ChatRoomDto;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.Serializable;
 import java.util.*;
 
 @Slf4j
@@ -27,24 +33,37 @@ import java.util.*;
 @Tag(name = "채팅방", description = "생성, 조회, 입장")
 public class ChatRoomController {
     private final ChatService chatService;
+    private final ChatRoomService chatRoomService;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
     private final FriendService friendService;
     private final JwtService jwtService;
 
+    @Autowired
+    public ChatRoomController(ChatRoomService chatRoomService,
+                              ChatService chatService,
+                              ChatRepository chatRepository,
+                              UserRepository userRepository,
+                              FriendRepository friendRepository,
+                              FriendService friendService,
+                              JwtService jwtService) {
+        this.chatRoomService = chatRoomService;
+        this.chatService = chatService;
+        this.chatRepository = chatRepository;
+        this.userRepository = userRepository;
+        this.friendRepository = friendRepository;
+        this.friendService = friendService;
+        this.jwtService = jwtService;
+    }
     @PostMapping("/createRoom")
-    public String createRoom(@RequestBody Map<String, Long> requestBody,
-                             @RequestHeader("Authorization") String accessToken,
-                             RedirectAttributes rttr) {
+    public ResponseEntity<String> createRoom(@RequestBody Map<String, Long> requestBody,
+                             @RequestHeader("Authorization") String accessToken) {
 
         Long teacherUserId = requestBody.get("teacherUserId");
         Long parentUserId = requestBody.get("parentUserId");
 
         if (jwtService.isTokenValid(accessToken)) { // AccessToken이 유효한 경우
-//            String roomId = chatService.createChatRoom();
-//            log.info("채팅방 생성 : {}", roomId);
-
             Optional<String> userEmail = jwtService.extractEmail(accessToken);
             if (userEmail.isPresent()) {
                 Optional<User> userOptional = userRepository.findByEmail(userEmail.get());
@@ -53,45 +72,80 @@ public class ChatRoomController {
                     if (user.getId().equals(teacherUserId) || user.getId().equals(parentUserId)) {
                         // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
                         // 채팅방 정보를 저장하고 리다이렉트
-//                        friendService.saveUUID(roomId, teacherUserId, parentUserId);
-//                        rttr.addFlashAttribute("roomId", roomId);
-                        return "redirect:/list";
+                        ChatRoom chatRoom = chatRoomService.createRoom();
+                        log.info("채팅방 생성 : {}", chatRoom.getRoomId());
+
+                        friendService.saveUUID(chatRoom.getRoomId(), teacherUserId, parentUserId);
+                        return ResponseEntity.ok(chatRoom.getRoomId());
                     }
                 }
             }
             // 유효한 AccessToken이지만 사용자 ID가 일치하지 않는 경우
-            return "redirect:/error";
+            return ResponseEntity.badRequest().body("사용자의 ID가 teacher 또는 parent 에서 발견되지 않았습니다.");
         } else {
             // AccessToken이 유효하지 않은 경우에는 처리할 작업을 추가합니다.
             // 예를 들어, 로그인 페이지로 리다이렉트하거나 에러 메시지를 반환할 수 있습니다.
-            return "redirect:/login";
+            return ResponseEntity.badRequest().body("access 토큰이 유효하지 않습니다.");
         }
     }
 
+    /**
+     * 특정 방 번호 알아내기
+     * @param requestBody
+     * @return
+     */
     @GetMapping("/findRoomId")
-    public ResponseEntity<?> findRoomIdByTeacherIdOrParentId(@RequestBody Map<String, Long> requestBody) {
-        Long teacherId = requestBody.get("teacherId");
-        Long parentId = requestBody.get("parentId");
+    public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
+        Long parentUserId = requestBody.get("parentId");
+        try {
+            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId);
 
-        // teacherID 또는 parentID로 해당하는 roomID 찾기
-        Long roomId = friendRepository.findRoomId(teacherId, parentId);
+            if (teacherUserIds.isEmpty()) {
+                return ResponseEntity.ok("부모와 선생님이 연결되지 않았습니다.");
+            }
 
-        if (roomId != null) {
-            // roomID를 body로 반환
-            return ResponseEntity.ok(roomId);
-        } else {
-            // 해당하는 roomID가 없는 경우 예외 처리
-//            return ResponseEntity.notFound().build();
-            return ResponseEntity.ok("roomID가 null입니다.");
+            String roomId = friendService.findRoomId(teacherUserIds, parentUserId); // 🧚🏻‍ 이 코드 검토하기
+
+            if (roomId != null) {
+                return ResponseEntity.ok(roomId);
+            } else {
+                return ResponseEntity.ok("roomId 가 null 입니다.");
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    /**
+     * 특정 채팅방 인원 조회
+     */
+    @GetMapping("/userCount/{roomId}")
+    public ResponseEntity<Integer> getUserCount(@PathVariable String roomId) {
+        int userCount = chatRoomService.getUserCount(roomId);
+        return ResponseEntity.ok(userCount);
+    }
+
+    /**
+     * 유저의 채팅방 리스트 반환
+     */
+
+    @Operation(summary = "roomId 로 채팅방 참여 유저 리스트 조회")
+    @GetMapping("/findUsers/{roomId}")
+    public ResponseEntity<?> getUserListByRoomId(@PathVariable String roomId) {
+        if (!friendService.roomExists(roomId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("roomId가 틀렸습니다.");
+        }
+        List<String> userList = chatRoomService.getUserListByRoomId(roomId);
+        return ResponseEntity.ok(userList);
     }
 
     @Operation(summary = "전체 채팅방 조회")
     @GetMapping("/showAllChatRooms")
-    public List<ChatRoomDto> showAllChatRooms() {
+    public List<ChatRoom> showAllChatRooms() {
         try {
-            List<ChatRoomDto> chatRooms = chatService.findAllRoom();
-            log.info("SHOW ALL CHATROOM LIST : {}", chatService.findAllRoom());
+            List<ChatRoom> chatRooms = chatRoomService.findAllRoom();
+            log.info("SHOW ALL CHATROOM LIST : {}", chatRoomService.findAllRoom());
             return chatRooms;
         } catch (Exception e) {
             log.error("전체 채팅방 조회에서 에러 발생 : {}", e.getMessage());
@@ -133,10 +187,10 @@ public class ChatRoomController {
     // 채팅방 입장 화면
     // 파라미터로 넘어오는 roomId 를 확인후 해당 roomId 를 기준으로
     // 채팅방을 찾아서 클라이언트를 chatroom 으로 보낸다.
-    @GetMapping("/enterRoom")
-    public String roomDetail(Model model, @RequestParam String roomId) {
-        log.info("roomId {}", roomId);
-        model.addAttribute("room", chatService.findRoomById(roomId));
-        return "chatroom";
-    }
+//    @GetMapping("/enterRoom")
+//    public String roomDetail(Model model, @RequestParam String roomId) {
+//        log.info("roomId {}", roomId);
+//        model.addAttribute("room", chatRoomService.findRoomById(roomId));
+//        return "chatroom";
+//    }
 }

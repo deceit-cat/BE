@@ -131,12 +131,6 @@ public class ChatController {
 //        }
 //    }
 
-//    // 채팅방 내 참가한 유저 리스트 반환
-//    @GetMapping("/userList")
-//    @ResponseBody
-//    public ArrayList<String> userList(@RequestParam String roomId) {
-//        return chatService.getUserList(roomId);
-//    }
 //
 //    // 채팅에 참여한 유저 닉네임 중복 확인
 //    @GetMapping("/duplicateName")
