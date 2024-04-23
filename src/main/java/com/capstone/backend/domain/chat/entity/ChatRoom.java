@@ -1,24 +1,20 @@
 package com.capstone.backend.domain.chat.entity;
 
-import com.capstone.backend.domain.user.entity.Friend;
 import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Teacher;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.UUID;
 
+@Table(name = "CHATROOMS")
 @Entity
 @Getter
 @Setter
 public class ChatRoom {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(unique = true)
+    @Column(name = "room_id")
     private String roomId;
 
     @OneToOne

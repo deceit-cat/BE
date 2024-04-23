@@ -2,11 +2,9 @@ package com.capstone.backend.domain.chat.entity;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
+@Table(name = "CHATS")
 @Data
 @Entity
 public class Chat {

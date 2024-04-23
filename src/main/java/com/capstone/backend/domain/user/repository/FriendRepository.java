@@ -11,33 +11,17 @@ import java.util.Optional;
 
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
-    /**
-     * roomId로 room 존재 여부 확인
-     * @param roomId
-     * @return
-     */
+    // roomId로 room 존재 여부 확인
     Optional<Friend> findByRoomId(String roomId);
 
-    /**
-     * teacher, parent 유저로 roomId 찾기
-     * @param teacherUserId
-     * @param parentUserId
-     * @return
-     */
+    // teacher, parent 유저로 roomId 찾기
     @Query("SELECT f.roomId FROM Friend f WHERE f.teacherUserId = :teacherUserId AND f.parentUserId = :parentUserId")
     Optional<String> findRoomId(@Param("teacherUserId") Long teacherUserId, @Param("parentUserId") Long parentUserId);
 
-    /**
-     * teacherUserId와 parentUserId가 모두 일치하는 행을 찾습니다.
-     * @param teacherUserId
-     * @param parentUserId
-     * @return
-     */
+    // teacherUserId와 parentUserId가 모두 일치하는 행을 찾습니다.
     Optional<Friend> findByTeacherUserIdAndParentUserId(Long teacherUserId, Long parentUserId);
 
-    /**
-     * parent_user_id로 teacher_user_id 찾기
-     */
+    // parent_user_id로 teacher_user_id 찾기
     @Query("SELECT DISTINCT f.teacherUserId FROM Friend f WHERE f.parentUserId = :parentUserId")
     List<Long> findTeacherUserIdAsParent(@Param("parentUserId") Long parentUserId);
 }

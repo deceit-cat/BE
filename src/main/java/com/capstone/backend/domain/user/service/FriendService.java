@@ -9,6 +9,7 @@ import com.capstone.backend.domain.user.entity.Teacher;
 import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.capstone.backend.domain.user.repository.ParentRepository;
 import com.capstone.backend.domain.user.repository.TeacherRepository;
+import org.checkerframework.checker.units.qual.A;
 import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
@@ -59,23 +60,27 @@ public class FriendService {
     /**
      * parentId로 teacherId 찾기
      */
-    public List<Long> findTeacherUserIdsAsParent(Parent parent) {
-        List<Long> childTeacherIds = getChildteacherIds(parent);
-        List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parent.getUser().getId());
-        List<Long> matchingTeacherIds = new ArrayList<>();
+    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
+        try {
+            List<Long> childTeacherIds = getChildteacherIds(parentUserId);
+            List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parentUserId);
+            List<Long> matchingTeacherIds = new ArrayList<>();
 
-        // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
-        for (Long childTeacherId : childTeacherIds) {
-            if (friendTeacherIds.contains(childTeacherId)) {
-                // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
-                matchingTeacherIds.add(childTeacherId);
+            // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
+            for (Long childTeacherId : childTeacherIds) {
+                if (friendTeacherIds.contains(childTeacherId)) {
+                    // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
+                    matchingTeacherIds.add(childTeacherId);
+                }
             }
+            return matchingTeacherIds;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("부모의 ID를 찾을 수 없습니다.", e);
         }
-        return matchingTeacherIds;
     }
-//    public List<Long> findTeacherUserIds(Parent parent) {
-//        List<Long> childTeacherIds = getChildteacherIds(parent);
-//        List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parent.getUser().getId());
+//    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
+//        List<Long> childTeacherIds = getChildteacherIds(parentUserId);
+//        List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parentUserId);
 //        List<Long> matchingTeacherIds = new ArrayList<>();
 //
 //        // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
@@ -89,25 +94,33 @@ public class FriendService {
 //    }
 
     public String findRoomId(List<Long> teacherUserIds, Long parentUserId) {
-        for (Long teacherUserId : teacherUserIds) {
-            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
-            if (roomIdOptional.isPresent()) {
-                return roomIdOptional.get();
-            }
+        List<String> roomIds = findRoomIds(teacherUserIds, parentUserId);
+        if(!roomIds.isEmpty()) {
+            return roomIds.get(0);
+        } else {
+            return null;
         }
-        return null;
     }
 
+    public List<String> findRoomIds(List<Long> teacherUserIds, Long parentUserId) {
+        List<String> roomIds = new ArrayList<>();
+        for (Long teacherUserId : teacherUserIds) {
+            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
+            roomIdOptional.ifPresent(roomIds::add);
+        }
+        return roomIds;
+    }
 
-
-    private List<Long> getChildteacherIds(Parent parent) {
+    private List<Long> getChildteacherIds(Long parentUserId) {
         // 여기에 부모의 자식 목록에서 선생님의 ID를 가져오는 로직을 구현합니다.
         // 이 예시에서는 임의의 로직을 사용하여 자식의 선생님 ID를 가져오는 것으로 가정합니다.
         List<Long> childTeacherIds = new ArrayList<>();
 
         // 부모의 자식 목록을 가져온다고 가정하고, 각 자식의 선생님 ID를 추출하여 리스트에 추가합니다.
         // 예를 들어, Parent 클래스에 getChildList() 메서드가 있다고 가정합니다.
-        List<Child> children = parent.getChildren();
+        List<Child> children = parentRepository.findById(parentUserId)
+                .orElseThrow(() -> new RuntimeException("parent를 찾을 수 없습니다."))
+                .getChildren();
 
         for (Child child : children) {
             Long teacherId = child.getTeacherUserId(); // 자식이 가지고 있는 선생님의 ID를 가져옵니다.
@@ -117,21 +130,13 @@ public class FriendService {
     }
 
     public void saveUUID(String roomId, Long teacherUserId, Long parentUserId) {
-        Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
+        Optional<Friend> friendOptional = friendRepository.findByTeacherUserIdAndParentUserId(teacherUserId, parentUserId);
 
-        roomIdOptional.ifPresent(exsitingRoomId -> {
-            Optional<Friend> friendOptional = friendRepository.findByTeacherUserIdAndParentUserId(teacherUserId, parentUserId);
-
-            friendOptional.ifPresent(friend -> {
+        friendOptional.ifPresent(friend -> {
                 friend.setRoomId(roomId);
+                friend.setTeacherUserId(teacherUserId);
+                friend.setParentUserId(parentUserId);
                 friendRepository.save(friend);
-
-                ChatRoom chatRoom = new ChatRoom();
-                chatRoom.setRoomId(roomId);
-                chatRoom.setTeacher(friend.getTeacher());
-                chatRoom.setParent(friend.getParent());
-                chatRoomRepository.save(chatRoom);
-            });
         });
     }
 

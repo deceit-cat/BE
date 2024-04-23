@@ -6,6 +6,7 @@ import com.capstone.backend.domain.chat.entity.ChatRoom;
 import com.capstone.backend.domain.chat.repository.ChatRepository;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.user.entity.Parent;
+import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.Teacher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
