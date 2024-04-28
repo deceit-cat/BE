@@ -96,7 +96,7 @@ public class NotificationService {
      * @param teacherUserId
      */
     private void sendSubscriptionRequest(Long teacherUserId) {
-        String url = "http://localhost:8080/notify/subscribe/" + teacherUserId;
+        String url = "http://13.124.97.155:8080/notify/subscribe/" + teacherUserId;
         logger.info("URL로 Get 요청을 보내기 직전 \"{}\"", url);
 
         // GET 요청 보내기

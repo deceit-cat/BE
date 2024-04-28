@@ -27,11 +27,6 @@ public class ChatController {
     private final SimpMessageSendingOperations template;
     private final ChatService chatService;
 
-//    public ChatController(SimpMessageSendingOperations template, ChatService service) {
-//        this.template = template;
-//        this.service = service;
-//    }
-
     /** MessageMapping 을 통해 WebSocket 로 들어오는 메시지 처리
       * 클라이언트에서는 /pub/chat/message 로 요청하게 되고 이것을 controller 가 받아서 처리한다.
       * 처리가 완료되면 /queue/chat/{roomId} 로 메시지가 전송된다.
