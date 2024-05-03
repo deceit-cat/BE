@@ -155,8 +155,12 @@ public class UserService {
                 } else {
                     System.out.println("teacher 의 userId : " + teacherUserId);
                     // 부모와 선생님 사이의 친구 추가 요청 알림을 보냅니다.
-//                notificationService.followRequest(parent.getUser(), teacher.getUser());
-                    notificationService.notify(teacherUserId, child + "의 학부모 " + parent.getUser().getName() + "님의 친구 추가 요청을 수락하시겠습니까?");
+                    notificationService.followRequest(parent.getUser(), teacher.getUser());
+
+                    // sse 메세지 발송
+                    Map<String, Object> eventData = new HashMap<>();
+                    eventData.put("message", child + "의 학부모 " + parent.getUser().getName() + "님의 친구 추가 요청을 수락하시겠습니까?");
+                    notificationService.notify(teacherUserId, eventData);
                 }
             }
         }

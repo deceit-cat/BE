@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -28,10 +30,10 @@ public class NotificationService {
      * 다른 서비스 로직에서 이 메서드를 사용해 데이터를 Object event에 넣고 전송하면 된다.
      *
      * @param userId - 메세지를 전송할 사용자의 아이디.
-     * @param event  - 전송할 이벤트 객체.
+     * @param eventData  - 전송할 이벤트 객체.
      */
-    public void notify(Long userId, Object event) {
-        sendToClient(userId, event);
+    public void notify(Long userId, Map<String, Object> eventData) {
+        sendToClient(userId, eventData);
     }
 
     public void startSSE(Teacher teacher) {
@@ -75,15 +77,14 @@ public class NotificationService {
      * 클라이언트에게 데이터를 전송
      *
      * @param userId   - 데이터를 받을 사용자의 아이디.
-     * @param data - 전송할 데이터.
+     * @param eventData - 전송할 데이터.
      */
 
-    private void sendToClient(Long userId, Object data) { // 이벤트 전송
+    private void sendToClient(Long userId, Object eventData) { // 이벤트 전송
         SseEmitter emitter = emitterRepository.get(userId);
-
         if (emitter != null) {
             try {
-                emitter.send(SseEmitter.event().id(String.valueOf(userId)).name("sse").data(data));
+                emitter.send(SseEmitter.event().id(String.valueOf(userId)).name("sse").data(eventData));
             } catch (IOException exception) {
                 emitterRepository.deleteById(userId);
                 emitter.completeWithError(exception);
@@ -123,7 +124,7 @@ public class NotificationService {
                 parentEmitter.send("친구 추가 요청: " + teacherUser.getName());
                 teacherEmitter.send("친구 요청 도착: " + parentUser.getName());
             } catch (IOException e) {
-                // 예외 처리
+                System.err.println("알림 전송 중 오류 발생 " + e.getMessage());
             }
         }
     }

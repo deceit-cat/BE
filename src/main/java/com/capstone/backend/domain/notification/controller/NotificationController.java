@@ -1,7 +1,9 @@
 package com.capstone.backend.domain.notification.controller;
 
 import com.capstone.backend.domain.notification.service.NotificationService;
+import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.repository.ParentRepository;
 import com.capstone.backend.domain.user.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.webjars.NotFoundException;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,6 +25,7 @@ import java.util.Optional;
 public class NotificationController {
     private final NotificationService notificationService;
     private final TeacherRepository teacherRepository;
+    private final ParentRepository parentRepository;
 
     @GetMapping(value="/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Long userId) {
@@ -33,8 +37,21 @@ public class NotificationController {
     }
 
     @PostMapping("/send-data/{teacherId}")
-    public void sendData(@PathVariable Long teacherId, @RequestBody Map<String, Long> requestBody) {
+    public ResponseEntity<?> sendData(@PathVariable Long teacherId, @RequestBody Map<String, Long> requestBody) {
         Long parentUserId = requestBody.get("parentUserId");
-        notificationService.notify(teacherId, String.valueOf(parentUserId));
+        Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
+        if (parentOptional.isPresent()) {
+            Parent parent = parentOptional.get();
+            String parentName = parent.getUser().getName();
+
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("parentName", parentName);
+            eventData.put("parentId", parent.getUser().getId());
+
+            notificationService.notify(teacherId, eventData);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

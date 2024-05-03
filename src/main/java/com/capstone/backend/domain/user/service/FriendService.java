@@ -57,41 +57,6 @@ public class FriendService {
         return friendRepository.findByRoomId(roomId).isPresent();
     }
 
-    /**
-     * parentId로 teacherId 찾기
-     */
-    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
-        try {
-            List<Long> childTeacherIds = getChildteacherIds(parentUserId);
-            List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parentUserId);
-            List<Long> matchingTeacherIds = new ArrayList<>();
-
-            // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
-            for (Long childTeacherId : childTeacherIds) {
-                if (friendTeacherIds.contains(childTeacherId)) {
-                    // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
-                    matchingTeacherIds.add(childTeacherId);
-                }
-            }
-            return matchingTeacherIds;
-        } catch (RuntimeException e) {
-            throw new RuntimeException("부모의 ID를 찾을 수 없습니다.", e);
-        }
-    }
-//    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
-//        List<Long> childTeacherIds = getChildteacherIds(parentUserId);
-//        List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parentUserId);
-//        List<Long> matchingTeacherIds = new ArrayList<>();
-//
-//        // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
-//        for (Long childTeacherId : childTeacherIds) {
-//            if (friendTeacherIds.contains(childTeacherId)) {
-//                // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
-//                matchingTeacherIds.add(childTeacherId);
-//            }
-//        }
-//        return matchingTeacherIds;
-//    }
 
     public String findRoomId(List<Long> teacherUserIds, Long parentUserId) {
         List<String> roomIds = findRoomIds(teacherUserIds, parentUserId);
@@ -109,6 +74,36 @@ public class FriendService {
             roomIdOptional.ifPresent(roomIds::add);
         }
         return roomIds;
+    }
+
+    public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
+        try {
+            Parent parent = parentRepository.findByUserId(parentUserId)
+                    .orElseThrow(() -> new RuntimeException("부모를 찾을 수 없습니다. in FriendService"));
+
+            List<Long> childTeacherIds = getChildteacherIds(parent.getUser().getId());
+            if (childTeacherIds.isEmpty()) {
+                throw new RuntimeException("자식의 선생님 ID를 가져올 수 없습니다.");
+            }
+
+            List<Long> friendTeacherIds = friendRepository.findTeacherUserIdAsParent(parent.getUser().getId());
+            if (friendTeacherIds == null || friendTeacherIds.isEmpty()) {
+                throw new RuntimeException("친구테이블에서의 선생님 ID를 가져올 수 없습니다.");
+            }
+
+            List<Long> matchingTeacherIds = new ArrayList<>();
+
+            // 자식이 가지고 있는 선생님의 ID와 친구 목록에서 가져온 선생님의 ID를 비교하여 일치하는 ID를 찾습니다.
+            for (Long childTeacherId : childTeacherIds) {
+                if (friendTeacherIds.contains(childTeacherId)) {
+                    // 일치하는 선생님의 ID가 발견되면 리스트에 추가합니다.
+                    matchingTeacherIds.add(childTeacherId);
+                }
+            }
+            return matchingTeacherIds;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("부모의 ID를 찾을 수 없습니다.", e);
+        }
     }
 
     private List<Long> getChildteacherIds(Long parentUserId) {

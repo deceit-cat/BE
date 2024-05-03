@@ -35,9 +35,9 @@ public class FriendController {
         if (teacher != null && parent != null) {
             friendService.acceptFriendRequest(teacher, parent);
             childService.mapTeacherToChild(teacher.getUser().getId(), parent.getUser().getId());
-            return ResponseEntity.ok("Friend request accepted successfully.");
+            return ResponseEntity.ok("친구 추가 완료");
         } else {
-            return ResponseEntity.badRequest().body("Teacher or parent not found.");
+            return ResponseEntity.badRequest().body("선생님 혹은 부모를 찾을 수 없습니다.");
         }
     }
 }

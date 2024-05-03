@@ -78,7 +78,8 @@ public class ChatRoomController {
                     if (user.getId().equals(teacherUserId) || user.getId().equals(parentUserId)) {
                         Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
                         if (roomIdOptional.isPresent()) {
-                            return ResponseEntity.badRequest().body("이미 채팅방이 존재합니다.");
+                            String existingRoomId = roomIdOptional.get();
+                            return ResponseEntity.ok(existingRoomId);
                         }
 
                         // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
@@ -109,23 +110,21 @@ public class ChatRoomController {
      */
     @GetMapping("/findRoomId")
     public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
-        // 부모의 아이디 가져오기
-        Long parentUserId = requestBody.get("parentUserId");
         try {
-            Parent parent = parentRepository.findById(parentUserId)
-                    .orElseThrow(() -> new RuntimeException("부모를 찾을 수 없습니다."));
+            Long parentUserId = requestBody.get("parentUserId");
+            Parent parent = parentRepository.findByUserId(parentUserId)
+                    .orElseThrow(() -> new RuntimeException("부모를 찾을 수 없습니다. in ChatRoomController"));
 
-            Long userId = parent.getUser().getId();
-
-            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(userId);
+            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId); // 부모와 친구인 선생님들의 리스트
 
             if (teacherUserIds.isEmpty()) {
                 return ResponseEntity.ok("부모와 연결된 선생님이 없습니다.");
             }
 
             Map<Long, String> teacherRoomMap = new HashMap<>();
+
             for (Long teacherUserId : teacherUserIds) {
-                String roomId = friendService.findRoomId(Arrays.asList(teacherUserId), userId);
+                String roomId = friendService.findRoomId(Arrays.asList(teacherUserId), parent.getUser().getId());
                 teacherRoomMap.put(teacherUserId, roomId);
             }
             return ResponseEntity.ok(teacherRoomMap);
