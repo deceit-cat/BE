@@ -3,23 +3,23 @@ package com.capstone.backend.domain.swagger.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SwaggerConfig {
-    private static final String SECURITY_SCHME_NAME="authorization";
+    private static final String SECURITY_SCHEMA_NAME="authorization";
 
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .components(new Components()
-                .addSecuritySchemes(SECURITY_SCHME_NAME, new SecurityScheme()
-                    .type(SecurityScheme.Type.HTTP)
-                    .scheme("bearer")
-                    .bearerFormat("JWT")))
+                    .addSecuritySchemes(SECURITY_SCHEMA_NAME, new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+                        .name("Authorization")))
                 .info(apiInfo());
     }
 
