@@ -5,6 +5,7 @@ import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.notification.service.NotificationService;
 import com.capstone.backend.domain.user.dto.ChildDto;
+import com.capstone.backend.domain.user.dto.TeacherDto;
 import com.capstone.backend.domain.user.dto.UserDto;
 import com.capstone.backend.domain.user.entity.*;
 import com.capstone.backend.domain.user.repository.*;
@@ -109,9 +110,16 @@ public class UserService {
                     userRepository.save(user);
 
                     /* 부모의 자식 정보와 일치하는 선생님을 찾아 친구 추가 요청 알림 보내기*/
-                    followRequest(parent);
+//                    followRequest(parent);
 
                 } else if (userDto.getRole() == Role.TEACHER) { // TEACHER
+                    if (userDto.getTeacherSchool() == null) {
+                        throw new IllegalArgumentException("선생님의 학교 정보를 입력하세요.");
+                    }
+                    if (userDto.getTeacherClass() == null) {
+                        throw new IllegalArgumentException("선생님의 반 정보를 입력하세요.");
+                    }
+
                     Teacher teacher = new Teacher(
                             user,
                             userDto.getTeacherSchool(),
@@ -142,29 +150,29 @@ public class UserService {
      * 부모의 자식 정보와 일치하는 선생님을 찾아 친구 추가 요청 알림 보내기
      * @param parent 부모 정보 가져오기
      */
-    public void followRequest(Parent parent) {
-        List<Child> children = parent.getChildren();
-
-        for (Child child : children) {
-            Teacher teacher = teacherRepository.findByTeacherSchoolAndTeacherClass(child.getChildSchool(), child.getChildClass());
-
-            if (teacher != null && teacher.getTeacherName().equals(child.getTeacherName())) {
-                Long teacherUserId = teacher.getUser().getId();
-                if (teacherUserId == null) {
-                    System.out.println("teacher 의 userId 가 null 입니다. teacher: " + teacher);
-                } else {
-                    System.out.println("teacher 의 userId : " + teacherUserId);
-                    // 부모와 선생님 사이의 친구 추가 요청 알림을 보냅니다.
-                    notificationService.followRequest(parent.getUser(), teacher.getUser());
-
-                    // sse 메세지 발송
-                    Map<String, Object> eventData = new HashMap<>();
-                    eventData.put("message", child + "의 학부모 " + parent.getUser().getName() + "님의 친구 추가 요청을 수락하시겠습니까?");
-                    notificationService.notify(teacherUserId, eventData);
-                }
-            }
-        }
-    }
+//    public void followRequest(Parent parent) {
+//        List<Child> children = parent.getChildren();
+//
+//        for (Child child : children) {
+//            Teacher teacher = teacherRepository.findCompare(child.getChildSchool(), child.getChildClass());
+//
+//            if (teacher != null && teacher.getTeacherName().equals(child.getTeacherName())) {
+//                Long teacherUserId = teacher.getUser().getId();
+//                if (teacherUserId == null) {
+//                    System.out.println("teacher 의 userId 가 null 입니다. teacher: " + teacher);
+//                } else {
+//                    System.out.println("teacher 의 userId : " + teacherUserId);
+//                    // 부모와 선생님 사이의 친구 추가 요청 알림을 보냅니다.
+//                    notificationService.followRequest(parent.getUser(), teacher.getUser());
+//
+//                    // sse 메세지 발송
+//                    Map<String, Object> eventData = new HashMap<>();
+//                    eventData.put("message", child + "의 학부모 " + parent.getUser().getName() + "님의 친구 추가 요청을 수락하시겠습니까?");
+//                    notificationService.notify(teacherUserId, eventData);
+//                }
+//            }
+//        }
+//    }
 
     /**
      * SSE 구독 시작
@@ -190,9 +198,47 @@ public class UserService {
     }
 
     /**
-     * userId로 TeacherUser 찾기
+     * 부모 토큰으로 아이들의 선생님 찾기
      *
      */
+    public List<TeacherDto> findTeachers(String accessToken) throws Exception {
+        try {
+            User user = validateAccessTokenAndGetUser(accessToken);
+            if (user.getRole() != Role.PARENT) {
+                throw new IllegalStateException("부모로 설정된 사용자가 아닙니다.");
+            }
+
+            Optional<Parent> parentOptional = parentRepository.findByUser(user);
+
+            if (parentOptional.isPresent()) {
+                Parent parent = parentOptional.get();
+                List<TeacherDto> teachers = new ArrayList<>();
+                for (Child child : parent.getChildren()) {
+                    List<Teacher> foundTeachers = teacherRepository.findByTeacherSchoolAndTeacherClassAndUser_Name(
+                            child.getChildSchool(),
+                            child.getChildClass(),
+                            child.getTeacherName()
+                    );
+                    for (Teacher teacher : foundTeachers) {
+                        TeacherDto teacherDto = new TeacherDto();
+                        teacherDto.setTeacherId(teacher.getUser().getId());
+                        teacherDto.setTeacherName(teacher.getTeacherName());
+                        teacherDto.setTeacherSchool(teacher.getTeacherSchool());
+                        teacherDto.setTeacherClass(teacher.getTeacherClass());
+                        teacherDto.setChildName(child.getChildName());
+                        teachers.add(teacherDto);
+                    }
+                }
+                return teachers;
+            } else {
+                throw new IllegalStateException("부모가 존재하지 않습니다. UserServicve");
+            }
+
+        } catch (Exception e) {
+            throw new Exception("사용자 엑세스 토큰을 검증하는 도중 오류가 발생했습니다.", e);
+        }
+    }
+
     public Teacher findTeacherById(Long teacherUserId) {
         Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
         return teacherOptional.orElse(null);

@@ -17,6 +17,7 @@ public class UserDto {
     private Role role; // GUEST, TEACHER, PARENT
 
     // Teacher
+    private String teacherName;
     private String teacherSchool;
     private String teacherClass;
 
@@ -31,5 +32,17 @@ public class UserDto {
         for (int i=0; i<childNum; i++) {
             this.children.add(new ChildDto());
         }
+    }
+
+    public void setTeacherName(String name) {
+        this.teacherName = name;
+    }
+
+    public void setTeacherSchool(String teacherSchool) {
+        this.teacherSchool = teacherSchool;
+    }
+
+    public void setTeacherClass(String teacherClass) {
+        this.teacherClass = teacherClass;
     }
 }

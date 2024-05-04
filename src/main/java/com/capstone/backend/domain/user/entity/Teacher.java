@@ -1,10 +1,7 @@
 package com.capstone.backend.domain.user.entity;
 
 import lombok.*;
-
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
 
 @Table(name = "TEACHERS")
 @Entity
@@ -28,7 +25,9 @@ public class Teacher {
 
     public Teacher(User user, String teacherSchool, String teacherClass) {
         this.user = user;
-        this.user.setRole(Role.TEACHER);
+        if (user.getRole() != Role.TEACHER) {
+            this.user.setRole(Role.TEACHER);
+        }
         this.teacherSchool = teacherSchool;
         this.teacherClass = teacherClass;
     }

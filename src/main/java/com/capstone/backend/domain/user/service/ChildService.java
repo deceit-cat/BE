@@ -23,12 +23,15 @@ public class ChildService {
         List<Child> children = childRepository.findByParentUserId(parentUserId);
 
         for (Child child : children) {
-            Teacher teacher = teacherRepository.findByTeacherSchoolAndTeacherClass(
-                    child.getChildSchool(), child.getChildClass());
-
-            if (child.getTeacherUserId() == null && child.getTeacherName().equals(teacher.getTeacherName())) {
-                child.setTeacherUserId(teacherUserId);
-                childRepository.save(child);
+            List<Teacher> foundTeachers = teacherRepository.findByTeacherSchoolAndTeacherClassAndUser_Name(
+                    child.getChildSchool(),
+                    child.getChildClass(),
+                    child.getTeacherName());
+            for (Teacher teacher : foundTeachers) {
+                if (child.getTeacherUserId() == null && child.getTeacherName().equals(teacher.getTeacherName())) {
+                    child.setTeacherUserId(teacherUserId);
+                    childRepository.save(child);
+                }
             }
         }
     }

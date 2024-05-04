@@ -1,6 +1,7 @@
 package com.capstone.backend.domain.user.controller;
 
 import com.capstone.backend.domain.chat.service.ChatRoomService;
+import com.capstone.backend.domain.user.dto.TeacherDto;
 import com.capstone.backend.domain.user.dto.UserDto;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.service.UserService;
@@ -26,9 +27,13 @@ public class UserController {
 
     @Operation(summary = "회원가입")
     @PostMapping("/auth/sign-up")
-    public String singUp(@RequestBody UserDto userDto) throws Exception {
-        userService.signUp(userDto);
-        return "회원가입 성공";
+    public ResponseEntity<String> singUp(@RequestBody UserDto userDto) {
+        try {
+            userService.signUp(userDto);
+            return ResponseEntity.ok("회원가입 성공");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("해당 사용자가 이미 존재합니다.");
+        }
     }
 
     /**
@@ -62,6 +67,17 @@ public class UserController {
             return ResponseEntity.ok("사용자의 추가정보 입력 완료!");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "학부모 토큰으로 선생님 찾기")
+    @GetMapping("/findTeachers")
+    public ResponseEntity<List<TeacherDto>> findTeachers(@RequestHeader("Authorization") String token) {
+        try {
+            List<TeacherDto> teachers = userService.findTeachers(token);
+            return ResponseEntity.ok(teachers);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
