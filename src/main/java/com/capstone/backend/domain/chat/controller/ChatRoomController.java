@@ -5,9 +5,11 @@ import com.capstone.backend.domain.chat.repository.ChatRepository;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.entity.Parent;
+import com.capstone.backend.domain.user.entity.Teacher;
 import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.capstone.backend.domain.user.repository.ParentRepository;
+import com.capstone.backend.domain.user.repository.TeacherRepository;
 import com.capstone.backend.domain.user.repository.UserRepository;
 import com.capstone.backend.domain.user.service.FriendService;
 import com.capstone.backend.global.jwt.service.JwtService;
@@ -37,9 +39,9 @@ import java.util.*;
 public class ChatRoomController {
     private final ChatService chatService;
     private final ChatRoomService chatRoomService;
-    private final ChatRepository chatRepository;
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
+    private final TeacherRepository teacherRepository;
     private final FriendRepository friendRepository;
     private final FriendService friendService;
     private final JwtService jwtService;
@@ -47,17 +49,17 @@ public class ChatRoomController {
     @Autowired
     public ChatRoomController(ChatRoomService chatRoomService,
                               ChatService chatService,
-                              ChatRepository chatRepository,
                               UserRepository userRepository,
                               ParentRepository parentRepository,
+                              TeacherRepository teacherRepository,
                               FriendRepository friendRepository,
                               FriendService friendService,
                               JwtService jwtService) {
         this.chatRoomService = chatRoomService;
         this.chatService = chatService;
-        this.chatRepository = chatRepository;
         this.userRepository = userRepository;
         this.parentRepository = parentRepository;
+        this.teacherRepository = teacherRepository;
         this.friendRepository = friendRepository;
         this.friendService = friendService;
         this.jwtService = jwtService;
@@ -84,7 +86,7 @@ public class ChatRoomController {
 
                         // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
                         // 채팅방 정보를 저장
-                        ChatRoom chatRoom = chatRoomService.createRoom();
+                        ChatRoom chatRoom = chatRoomService.createRoom(teacherUserId, parentUserId);
                         String roomId = chatRoom.getRoomId();
 
                         log.info("채팅방 생성 : {}", roomId);
@@ -104,34 +106,52 @@ public class ChatRoomController {
     }
 
     /**
-     * 부모의 ID 를 이용해 선생님과 연결된 방 번호 알아내기
-     * @param requestBody
+     * 방 번호 알아내기
+     * @param token
      * @return
      */
-    @GetMapping("/findRoomId")
-    public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
-        try {
-            Long parentUserId = requestBody.get("parentUserId");
-            Parent parent = parentRepository.findByUserId(parentUserId)
-                    .orElseThrow(() -> new RuntimeException("부모를 찾을 수 없습니다. in ChatRoomController"));
+//    @GetMapping("/findRoomId")
+//    public ResponseEntity<?> findRoomId(@RequestHeader("Authorization") String token) {
+//        try {
+//            String email = jwtService.extractEmail(token)
+//                    .orElseThrow(() -> new RuntimeException("토큰에서 이메일을 추출할 수 없습니다."));
+//
+//            if (chatRoomService.isParent(email)) {
+//                return findParentRoomId(email);
+//            } else if (chatRoomService.isTeacher(email)) {
+//                return findTeacherRoomId(email);
+//            } else {
+//                return ResponseEntity.badRequest().body("유효한 토큰인지 확인해주세요.");
+//            }
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
-            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId); // 부모와 친구인 선생님들의 리스트
-
-            if (teacherUserIds.isEmpty()) {
-                return ResponseEntity.ok("부모와 연결된 선생님이 없습니다.");
-            }
-
-            Map<Long, String> teacherRoomMap = new HashMap<>();
-
-            for (Long teacherUserId : teacherUserIds) {
-                String roomId = friendService.findRoomId(Arrays.asList(teacherUserId), parent.getUser().getId());
-                teacherRoomMap.put(teacherUserId, roomId);
-            }
-            return ResponseEntity.ok(teacherRoomMap);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+//    @GetMapping("/findRoomId")
+//    public ResponseEntity<?> findRoomId(@RequestBody Map<String, Long> requestBody) {
+//        try {
+//            Long parentUserId = requestBody.get("parentUserId");
+//            Parent parent = parentRepository.findByUserId(parentUserId)
+//                    .orElseThrow(() -> new RuntimeException("부모를 찾을 수 없습니다. in ChatRoomController"));
+//
+//            List<Long> teacherUserIds = friendService.findTeacherUserIdsAsParent(parentUserId); // 부모와 친구인 선생님들의 리스트
+//
+//            if (teacherUserIds.isEmpty()) {
+//                return ResponseEntity.ok("부모와 연결된 선생님이 없습니다.");
+//            }
+//
+//            Map<Long, String> teacherRoomMap = new HashMap<>();
+//
+//            for (Long teacherUserId : teacherUserIds) {
+//                String roomId = friendService.findRoomId(Arrays.asList(teacherUserId), parent.getUser().getId());
+//                teacherRoomMap.put(teacherUserId, roomId);
+//            }
+//            return ResponseEntity.ok(teacherRoomMap);
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
     /**
      * 특정 채팅방 인원 조회

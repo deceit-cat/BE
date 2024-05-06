@@ -1,6 +1,7 @@
 package com.capstone.backend.domain.user.service;
 
 import com.capstone.backend.domain.user.entity.Child;
+import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Teacher;
 import com.capstone.backend.domain.user.repository.ChildRepository;
 import com.capstone.backend.domain.user.repository.TeacherRepository;
@@ -18,19 +19,19 @@ public class ChildService {
         this.childRepository = childRepository;
     }
 
-    public void mapTeacherToChild(Long teacherUserId, Long parentUserId) {
-        // teacherID와 parentID를 사용하여 해당 child를 찾음
-        List<Child> children = childRepository.findByParentUserId(parentUserId);
+    public void mapTeacherToChild(Teacher teacher, Parent parent) {
+        List<Child> children = childRepository.findByParentUserId(parent.getUser().getId());
 
         for (Child child : children) {
-            List<Teacher> foundTeachers = teacherRepository.findByTeacherSchoolAndTeacherClassAndUser_Name(
+            List<Teacher> childTeachers = teacherRepository.findByTeacherSchoolAndTeacherClassAndUser_Name(
                     child.getChildSchool(),
                     child.getChildClass(),
                     child.getTeacherName());
-            for (Teacher teacher : foundTeachers) {
-                if (child.getTeacherUserId() == null && child.getTeacherName().equals(teacher.getTeacherName())) {
-                    child.setTeacherUserId(teacherUserId);
+            for (Teacher childTeacher : childTeachers) {
+                if (childTeacher.getUser().getId().equals(teacher.getUser().getId())) {
+                    child.setTeacherUserId(teacher.getUser().getId());
                     childRepository.save(child);
+                    break;
                 }
             }
         }

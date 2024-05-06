@@ -8,6 +8,8 @@ import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.repository.ParentRepository;
+import com.capstone.backend.domain.user.repository.TeacherRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -17,18 +19,37 @@ import java.util.*;
 @Service
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
+    private final ParentRepository parentRepository;
+    private final TeacherRepository teacherRepository;
 
-    public ChatRoomService(ChatRoomRepository chatRoomRepository) {
+    public ChatRoomService(ChatRoomRepository chatRoomRepository,
+                           ParentRepository parentRepository,
+                           TeacherRepository teacherRepository) {
         this.chatRoomRepository = chatRoomRepository;
+        this.parentRepository = parentRepository;
+        this.teacherRepository = teacherRepository;
     }
 
     /**
      * 채팅방 생성 createRoom()
      * @return chatRoom
      */
-    public ChatRoom createRoom() {
+    public ChatRoom createRoom(Long teacherUserId, Long parentUserId) {
         ChatRoom chatRoom = new ChatRoom();
         chatRoom.setRoomId(UUID.randomUUID().toString());
+
+        Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
+        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
+
+        if (parentOptional.isPresent() && teacherOptional.isPresent()) {
+            Parent parent = parentOptional.get();
+            Teacher teacher = teacherOptional.get();
+            chatRoom.setParent(parent);
+            chatRoom.setTeacher(teacher);
+        } else {
+            throw new RuntimeException("부모 또는 선생님 정보가 존재하지 않습니다.");
+        }
+
         chatRoomRepository.save(chatRoom);
         return chatRoom;
     }
@@ -66,8 +87,6 @@ public class ChatRoomService {
         return (chatRoom != null) ? chatRoom.getUserCount() : 0;
     }
 
-
-
     /**
      *  roomId로 특정 채팅방 조회
      *
@@ -77,13 +96,30 @@ public class ChatRoomService {
 //        return chatRoomRepository.findById(roomId);
 //    }
 
-
     /**
      * user가 가진 roomId 조회
      * @return
      */
+//    public List<String> findParentRoomId(String email) {
+//        Long userId = parentRepository.findByEmail(email)
+//        List<String> roomIds = new ArrayList<>();
+//
+//        return roomIds;
+//    }
 
+//    public List<String> findTeacherRoomId(String email) {
+//        return roomIds;
+//    }
 
+    public boolean isParent(String email) {
+        Optional<Parent> parentOptional = parentRepository.findByUserEmail(email);
+        return parentOptional.isPresent();
+    }
+
+    public boolean isTeacher(String email) {
+        Optional<Teacher> teacherOptional = teacherRepository.findByUserEmail(email);
+        return teacherOptional.isPresent();
+    }
 
     /**
      * 모든 채팅방 조회

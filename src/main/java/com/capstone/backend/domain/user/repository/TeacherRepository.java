@@ -2,6 +2,7 @@ package com.capstone.backend.domain.user.repository;
 
 import com.capstone.backend.domain.user.entity.Child;
 import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,6 @@ import java.util.Optional;
 public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     List<Teacher> findByTeacherSchoolAndTeacherClassAndUser_Name(String teacherSchool, String teacherClass, String teacherName);
     Optional<Teacher> findByUserId(Long teacherUserId);
+    Optional<Teacher> findByUserEmail(String email);
+    Optional<Teacher> findByUser(User user);
 }

@@ -1,6 +1,8 @@
 package com.capstone.backend.domain.user.repository;
 
 import com.capstone.backend.domain.user.entity.Friend;
+import com.capstone.backend.domain.user.entity.Parent;
+import com.capstone.backend.domain.user.entity.Teacher;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +26,10 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     // parent_user_id로 teacher_user_id 찾기
     @Query("SELECT DISTINCT f.teacherUserId FROM Friend f WHERE f.parentUserId = :parentUserId")
     List<Long> findTeacherUserIdAsParent(@Param("parentUserId") Long parentUserId);
+
+    List<Friend> findByParentUserId(Long parentUserId);
+
+    List<Friend> findByTeacherUserId(Long teacherUserId);
+
+    boolean existsByTeacherAndParent(Teacher teacher, Parent parent);
 }

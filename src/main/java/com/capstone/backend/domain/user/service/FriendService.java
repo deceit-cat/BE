@@ -2,18 +2,19 @@ package com.capstone.backend.domain.user.service;
 
 import com.capstone.backend.domain.chat.entity.ChatRoom;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
-import com.capstone.backend.domain.user.entity.Child;
-import com.capstone.backend.domain.user.entity.Friend;
-import com.capstone.backend.domain.user.entity.Parent;
-import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.dto.FriendDto;
+import com.capstone.backend.domain.user.entity.*;
 import com.capstone.backend.domain.user.repository.FriendRepository;
 import com.capstone.backend.domain.user.repository.ParentRepository;
 import com.capstone.backend.domain.user.repository.TeacherRepository;
+import com.capstone.backend.global.jwt.service.JwtService;
 import org.checkerframework.checker.units.qual.A;
 import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.util.ArrayList;
@@ -27,16 +28,21 @@ public class FriendService {
     private final ChatRoomRepository chatRoomRepository;
     private final TeacherRepository teacherRepository;
     private final ParentRepository parentRepository;
-
+    private final UserService userService;
+    private final JwtService jwtService;
     @Autowired
     public FriendService(FriendRepository friendRepository,
                          ChatRoomRepository chatRoomRepository,
                          TeacherRepository teacherRepository,
-                         ParentRepository parentRepository) {
+                         ParentRepository parentRepository,
+                         UserService userService,
+                         JwtService jwtService) {
         this.friendRepository = friendRepository;
         this.chatRoomRepository = chatRoomRepository;
         this.teacherRepository = teacherRepository;
         this.parentRepository = parentRepository;
+        this.userService = userService;
+        this.jwtService = jwtService;
     }
 
     public void acceptFriendRequest(Teacher teacher, Parent parent) {
@@ -48,33 +54,18 @@ public class FriendService {
         friendRepository.save(friend);
     }
 
-    /**
-     * roomId 로 채팅방 참여 유저 리스트 조회시 사용
-     * @param roomId
-     * @return
-     */
-    public boolean roomExists(String roomId) {
-        return friendRepository.findByRoomId(roomId).isPresent();
+    public boolean areFriends(Teacher teacher, Parent parent) {
+        return friendRepository.existsByTeacherAndParent(teacher, parent);
     }
 
-
-    public String findRoomId(List<Long> teacherUserIds, Long parentUserId) {
-        List<String> roomIds = findRoomIds(teacherUserIds, parentUserId);
-        if(!roomIds.isEmpty()) {
-            return roomIds.get(0);
-        } else {
-            return null;
-        }
-    }
-
-    public List<String> findRoomIds(List<Long> teacherUserIds, Long parentUserId) {
-        List<String> roomIds = new ArrayList<>();
-        for (Long teacherUserId : teacherUserIds) {
-            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
-            roomIdOptional.ifPresent(roomIds::add);
-        }
-        return roomIds;
-    }
+//    public List<String> findRoomIds(List<Long> teacherUserIds, Long parentUserId) {
+//        List<String> roomIds = new ArrayList<>();
+//        for (Long teacherUserId : teacherUserIds) {
+//            Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
+//            roomIdOptional.ifPresent(roomIds::add);
+//        }
+//        return roomIds;
+//    }
 
     public List<Long> findTeacherUserIdsAsParent(Long parentUserId) {
         try {
@@ -147,4 +138,69 @@ public class FriendService {
         return friendRepository.findById(id).orElse(null);
     }
 
+//    public List<Friend> getUserFriends(String email) {
+//        Optional<Parent> parentOptional = parentRepository.findByEmail(email);
+//        Optional<Teacher> teacherOptional = teacherRepository.findByEmail(email);
+//
+//        if (parentOptional.isPresent()) {
+//            Long parentId = parentOptional.get().getUser().getId();
+//            // 부모와 연결된 friends 열들을 가져오는 로직
+//            return findUserFriends(parentId);
+//        } else if (teacherOptional.isPresent()) {
+//            Long teacherId = teacherOptional.get().getUser().getId();
+//            // 선생님과 연결된 friends 열들을 가져오는 로직
+//            return findUserFriends(teacherId);
+//        } else {
+//            throw new RuntimeException("유효한 사용자가 아닙니다.");
+//        }
+//    }
+
+//    public boolean roomExists(String roomId) {
+//        return chatRoomRepository.existsById(roomId);
+//    }
+
+    public List<FriendDto> findUserFriends(String accessToken) throws Exception {
+        try {
+            User user = userService.validateAccessTokenAndGetUser(accessToken);
+
+            Long userId;
+            List<Friend> userFriends;
+
+            Optional<Parent> parentOptional = parentRepository.findByUser(user);
+            Optional<Teacher> teacherOptional = teacherRepository.findByUser(user);
+
+            if (parentOptional.isPresent()) {
+                userId = parentOptional.get().getUser().getId();
+                userFriends = friendRepository.findByParentUserId(userId);
+            } else if (teacherOptional.isPresent()) {
+                userId = teacherOptional.get().getUser().getId();
+                userFriends = friendRepository.findByTeacherUserId(userId);
+            } else {
+                throw new RuntimeException("유효한 토큰인지 확인해주세요.");
+            }
+
+            if (userFriends.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "매핑된 값이 없습니다.");
+            }
+
+            List<FriendDto> result = new ArrayList<>();
+
+            for (Friend friend : userFriends) {
+                FriendDto friendDto = new FriendDto();
+                friendDto.setParentName(friend.getParent().getUser().getName());
+                friendDto.setParentUserId(friend.getParent().getUser().getId());
+                friendDto.setTeacherName(friend.getTeacher().getUser().getName());
+                friendDto.setTeacherUserId(friend.getTeacher().getUser().getId());
+                friendDto.setRoomId(friend.getRoomId());
+                result.add(friendDto);
+            }
+            return result;
+        } catch (Exception e) {
+            throw new Exception("사용자 엑세스 토큰을 검증하는 도중 오류가 발생했습니다.", e);
+        }
+    }
+
+    public boolean roomExists(String roomId) {
+        return roomId != null && !roomId.isEmpty();
+    }
 }
