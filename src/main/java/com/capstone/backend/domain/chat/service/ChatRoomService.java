@@ -34,22 +34,8 @@ public class ChatRoomService {
      * 채팅방 생성 createRoom()
      * @return chatRoom
      */
-    public ChatRoom createRoom(Long teacherUserId, Long parentUserId) {
-        ChatRoom chatRoom = new ChatRoom();
-        chatRoom.setRoomId(UUID.randomUUID().toString());
-
-        Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
-        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
-
-        if (parentOptional.isPresent() && teacherOptional.isPresent()) {
-            Parent parent = parentOptional.get();
-            Teacher teacher = teacherOptional.get();
-            chatRoom.setParent(parent);
-            chatRoom.setTeacher(teacher);
-        } else {
-            throw new RuntimeException("부모 또는 선생님 정보가 존재하지 않습니다.");
-        }
-
+    public ChatRoom createRoom(Teacher teacher, Parent parent) {
+        ChatRoom chatRoom = new ChatRoom(teacher, parent);
         chatRoomRepository.save(chatRoom);
         return chatRoom;
     }

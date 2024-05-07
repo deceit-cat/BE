@@ -14,7 +14,7 @@ import java.util.UUID;
 @Setter
 public class ChatRoom {
     @Id
-    @Column(name = "room_id")
+    @Column
     private String roomId;
 
     @OneToOne
@@ -29,6 +29,14 @@ public class ChatRoom {
         this.roomId = UUID.randomUUID().toString();
     }
 
+    public ChatRoom(Teacher teacher, Parent parent) {
+        this();
+        this.teacher = teacher;
+        this.parent = parent;
+        this.userCount = 2;
+    }
+
+    // 채팅방 내 인원 조회 시 사용 => 수정 필요
     public int getUserCount() {
         if (teacher != null && parent != null) {
             return 2;

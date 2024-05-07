@@ -7,13 +7,6 @@ spring:
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
 
-#  data:
-#    mongodb:
-#      username: admin
-#      password: 20160524
-#      uri: mongodb://localhost:8080
-#      authentication-database: admin
-
   ### oAuth 2###
   security:
     oauth2:
@@ -64,8 +57,8 @@ spring:
     allow-circular-references: true
 
 logging.level:
-  org.hibernate.SQL: INFO
-  com.capstone.backend: DEBUG
+  org.hibernate.SQL: ERROR
+  com.capstone.backend: INFO
 
 ### JWT ###
 jwt:

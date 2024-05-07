@@ -5,6 +5,7 @@ import com.capstone.backend.domain.chat.repository.ChatRepository;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.entity.Parent;
+import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.Teacher;
 import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.FriendRepository;
@@ -38,6 +39,8 @@ import java.util.*;
 public class ChatRoomController {
     private final ChatRoomService chatRoomService;
     private final UserRepository userRepository;
+    private final TeacherRepository teacherRepository;
+    private final ParentRepository parentRepository;
     private final FriendRepository friendRepository;
     private final FriendService friendService;
     private final JwtService jwtService;
@@ -45,11 +48,15 @@ public class ChatRoomController {
     @Autowired
     public ChatRoomController(ChatRoomService chatRoomService,
                               UserRepository userRepository,
+                              TeacherRepository teacherRepository,
+                              ParentRepository parentRepository,
                               FriendRepository friendRepository,
                               FriendService friendService,
                               JwtService jwtService) {
         this.chatRoomService = chatRoomService;
         this.userRepository = userRepository;
+        this.teacherRepository = teacherRepository;
+        this.parentRepository = parentRepository;
         this.friendRepository = friendRepository;
         this.friendService = friendService;
         this.jwtService = jwtService;
@@ -57,43 +64,49 @@ public class ChatRoomController {
 
     @Operation(summary = "채팅방 생성")
     @PostMapping("/createRoom")
-    public ResponseEntity<String> createRoom(@RequestBody Map<String, Long> requestBody,
-                             @RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<String> createRoom(@RequestHeader("Authorization") String token,
+                                             @RequestBody Map<String, Long> requestBody) {
 
         Long teacherUserId = requestBody.get("teacherUserId");
         Long parentUserId = requestBody.get("parentUserId");
 
-        if (jwtService.isTokenValid(accessToken)) { // AccessToken이 유효한 경우
-            Optional<String> userEmail = jwtService.extractEmail(accessToken);
-            if (userEmail.isPresent()) {
-                Optional<User> userOptional = userRepository.findByEmail(userEmail.get());
-                if (userOptional.isPresent()) {
+        if (jwtService.isTokenValid(token)) {
+            Optional<String> email = jwtService.extractEmail(token);
+            if (email.isPresent()) { // jwt 토큰 유효하면
+                Optional<User> userOptional = userRepository.findByEmail(email.get());
+                if (userOptional.isPresent()) { // 토큰에서 추출한 유저가 db에 존재하면
                     User user = userOptional.get();
+                    // 뽑아낸 id 가 받아온 json의 id와 하나라도 일치하면
                     if (user.getId().equals(teacherUserId) || user.getId().equals(parentUserId)) {
                         Optional<String> roomIdOptional = friendRepository.findRoomId(teacherUserId, parentUserId);
-                        if (roomIdOptional.isPresent()) {
+                        if (roomIdOptional.isPresent()) { // 이미 채팅방이 존재하면
                             String existingRoomId = roomIdOptional.get();
-                            return ResponseEntity.ok(existingRoomId);
+                            return ResponseEntity.ok(existingRoomId); // 존재하는 roomId 값 반환
                         }
 
-                        // 사용자 ID가 teacherUserId 또는 parentUserId와 일치하는 경우
-                        // 채팅방 정보를 저장
-                        ChatRoom chatRoom = chatRoomService.createRoom(teacherUserId, parentUserId);
-                        String roomId = chatRoom.getRoomId();
+                        // 채팅방 새로 생성하는 경우
+                        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
+                        Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
 
-                        log.info("채팅방 생성 : {}", roomId);
+                        if (teacherOptional.isPresent() && parentOptional.isPresent()) {
+                            Teacher teacher = teacherOptional.get();
+                            Parent parent = parentOptional.get();
 
-                        friendService.saveUUID(roomId, teacherUserId, parentUserId);
-                        return ResponseEntity.ok(chatRoom.getRoomId());
+                            if (user.getRole().equals(Role.TEACHER) || user.getRole().equals(Role.PARENT)) {
+                                ChatRoom chatRoom = chatRoomService.createRoom(teacher, parent); // ChatRoom 초기화 및 roomId 생성
+                                String roomId = chatRoom.getRoomId();
+
+                                friendService.saveUUID(roomId, teacherUserId, parentUserId); // Friends 테이블에 roomId 저장
+                                return ResponseEntity.ok(roomId);
+                            }
+                        }
                     }
                 }
             }
-            // 유효한 AccessToken이지만 사용자 ID가 일치하지 않는 경우
-            return ResponseEntity.badRequest().body("사용자의 ID가 teacher 또는 parent 에서 발견되지 않았습니다.");
-        } else {
-            // AccessToken이 유효하지 않은 경우에는 처리할 작업을 추가합니다.
-            // 예를 들어, 로그인 페이지로 리다이렉트하거나 에러 메시지를 반환할 수 있습니다.
-            return ResponseEntity.badRequest().body("access 토큰이 유효하지 않습니다.");
+            // 유저가 Teacher 또는 Parent 가 아닌 경우
+            return ResponseEntity.badRequest().body("유저 역할이 적절하지 않습니다.");
+        } else { // 유효하지 않은 jwt 토큰이면
+            return ResponseEntity.badRequest().body("액세스 토큰이 유효하지 않습니다.");
         }
     }
 

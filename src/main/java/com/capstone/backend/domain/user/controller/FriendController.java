@@ -38,8 +38,8 @@ public class FriendController {
 
         if (teacher != null && parent != null) {
             if (!friendService.areFriends(teacher,parent)) {
-                friendService.acceptFriendRequest(teacher, parent);
-                childService.mapTeacherToChild(teacher, parent);
+                friendService.acceptFriendRequest(teacher, parent); // Friends 테이블에 부모, 선생님 정보 저장
+                childService.mapTeacherToChild(teacher, parent); // Child에 선생님 정보 저장
                 String message = String.format("선생님 %s와 학부모 %s의 친구 추가 완료", teacher.getTeacherName(), parent.getUser().getName());
                 return ResponseEntity.ok(message);
             } else {
