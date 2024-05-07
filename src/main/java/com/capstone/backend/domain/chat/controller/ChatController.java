@@ -1,24 +1,13 @@
 package com.capstone.backend.domain.chat.controller;
 
 import com.capstone.backend.domain.chat.dto.ChatDto;
-import com.capstone.backend.domain.chat.repository.ChatRepository;
 import com.capstone.backend.domain.chat.service.ChatService;
-import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.web.socket.messaging.SessionDisconnectEvent;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,20 +17,24 @@ public class ChatController {
     private final ChatService chatService;
 
     /** MessageMapping 을 통해 WebSocket 로 들어오는 메시지 처리
-      * 클라이언트에서는 /pub/chat/message 로 요청하게 되고 이것을 controller 가 받아서 처리한다.
-      * 처리가 완료되면 /queue/chat/{roomId} 로 메시지가 전송된다.
-      */
+     * 클라이언트에서는 /pub/chat/message 로 요청하게 되고 이것을 controller 가 받아서 처리한다.
+     * 처리가 완료되면 /queue/chat/{roomId} 로 메시지가 전송된다.
+     */
 
-    /* 클라이언트가 채팅방에 입장할 때 */
+    /**
+     * 클라이언트가 채팅방에 입장
+     * @param chat ENTER
+     * @param headerAccessor
+     */
 //    @MessageMapping("/chat/enterUser")
 //    public void enterUser(@Payload ChatDto chat, SimpMessageHeaderAccessor headerAccessor) {
 //        // 채팅방 유저 +1
 //        chatService.plusUserCnt(chat.getRoomId());
-
-        // 채팅방에 유저 추가 및 UserUUID 반환
+//
+//         채팅방에 유저 추가 및 UserUUID 반환
 //        String userUUID = chatService.addUser(chat.getRoomId(), chat.getSender());
-
-        // 세션에 유저와 채팅방의 식별자를(반환 결과) 저장
+//
+//         세션에 유저와 채팅방의 식별자를(반환 결과) 저장
 //        headerAccessor.getSessionAttributes().put("userUUID", userUUID);
 //        headerAccessor.getSessionAttributes().put("roomId", chat.getRoomId());
 //
@@ -53,7 +46,10 @@ public class ChatController {
 //        template.convertAndSend("/queue/chat/" + chat.getRoomId(), enterMessage);
 //    }
 
-    /* queue/chat/{chatId} 구독한 클라이언트에게 메세지 publish */
+    /**
+     * queue/chat/{chatId} 구독한 클라이언트에게 메세지 publish
+     * @param chat 유저가 입력한 채팅 메시지
+     */
     @MessageMapping("/chat/sendMessage")
     public void sendMessage(@Payload ChatDto chat) {
         log.debug("서버에서 메세지 분석 중..."); // 서버로의 송신 OK
@@ -67,8 +63,12 @@ public class ChatController {
         template.convertAndSend("/queue/chat/room/" + chat.getRoomId(), chat); // 메세지 발행
     }
 
-    /* 클라이언트가 채탕방을 나갈 때 */
-    // EventListener 를 통해서 유저 퇴장을 확인
+
+    /**
+     * EventListener 를 통해서 유저 퇴장 확인
+     * 클라이언트가 채팅방을 나감
+     * @param event
+     */
 //    @EventListener
 //    public void webSocketDisconnectListener(SessionDisconnectEvent event) {
 //        String userUUID = (String) event.getMessage().getHeaders().get("simpSessionId");
@@ -124,14 +124,6 @@ public class ChatController {
 //                template.convertAndSend("/queue/chat/room/" + roomId, chat);
 //            }
 //        }
-//    }
-
-//
-//    // 채팅에 참여한 유저 닉네임 중복 확인
-//    @GetMapping("/duplicateName")
-//    @ResponseBody
-//    public String isDuplicateName(@RequestParam("roomId") String roomId, @RequestParam("username") String username) {
-//        return chatService.isDuplicateName(roomId, username);
 //    }
 }
 

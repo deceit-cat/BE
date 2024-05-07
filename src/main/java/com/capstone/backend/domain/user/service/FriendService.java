@@ -199,8 +199,4 @@ public class FriendService {
             throw new Exception("사용자 엑세스 토큰을 검증하는 도중 오류가 발생했습니다.", e);
         }
     }
-
-    public boolean roomExists(String roomId) {
-        return roomId != null && !roomId.isEmpty();
-    }
 }

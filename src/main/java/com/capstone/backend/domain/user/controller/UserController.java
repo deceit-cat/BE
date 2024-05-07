@@ -115,25 +115,6 @@ public class UserController {
         return ResponseEntity.ok(userService.getTotalUserCount());
     }
 
-//    @PostMapping("/friend-request")
-//    public ResponseEntity<String> sendFriendRequest(@RequestParam Long childId, @RequestParam Long teacherId) {
-//        try {
-//            userService.sendFriendRequest(childId, teacherId);
-//            return ResponseEntity.ok("Friend request sent!");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-//        }
-//    }
-//
-//    @PostMapping("/approve-friend-request")
-//    public ResponseEntity<String> approveFriendRequest(@RequestParam Long teacherId, @RequestParam Long childId, @RequestParam boolean approved) {
-//        try {
-//            userService.approveFriendRequest(teacherId, childId, approved);
-//            return ResponseEntity.ok("Friend request approved!");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-//        }
-//    }
 
 //    @Autowired
 //    private JwtService jwtService;

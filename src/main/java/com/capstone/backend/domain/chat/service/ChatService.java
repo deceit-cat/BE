@@ -1,7 +1,5 @@
 package com.capstone.backend.domain.chat.service;
 
-import com.capstone.backend.domain.chat.dto.ChatRoomDto;
-import com.capstone.backend.domain.chat.repository.ChatRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Payload;
