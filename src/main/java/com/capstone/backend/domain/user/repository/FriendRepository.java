@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface FriendRepository extends JpaRepository<Friend, Long> {
     // roomId로 room 존재 여부 확인
-    Optional<Friend> findByRoomId(String roomId);
+    List<Friend> findByRoomId(String roomId);
 
     // teacher, parent 유저로 roomId 찾기
     @Query("SELECT f.roomId FROM Friend f WHERE f.teacherUserId = :teacherUserId AND f.parentUserId = :parentUserId")

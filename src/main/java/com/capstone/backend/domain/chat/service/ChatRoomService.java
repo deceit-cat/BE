@@ -1,15 +1,14 @@
 package com.capstone.backend.domain.chat.service;
 
-import com.capstone.backend.domain.chat.dto.ChatRoomDto;
-import com.capstone.backend.domain.chat.entity.Chat;
 import com.capstone.backend.domain.chat.entity.ChatRoom;
-import com.capstone.backend.domain.chat.repository.ChatRepository;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
 import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.repository.ParentRepository;
 import com.capstone.backend.domain.user.repository.TeacherRepository;
+import com.capstone.backend.domain.user.service.FriendService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +20,16 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ParentRepository parentRepository;
     private final TeacherRepository teacherRepository;
+    private final FriendService friendService;
 
     public ChatRoomService(ChatRoomRepository chatRoomRepository,
                            ParentRepository parentRepository,
-                           TeacherRepository teacherRepository) {
+                           TeacherRepository teacherRepository,
+                           FriendService friendService) {
         this.chatRoomRepository = chatRoomRepository;
         this.parentRepository = parentRepository;
         this.teacherRepository = teacherRepository;
+        this.friendService = friendService;
     }
 
     /**
@@ -41,91 +43,76 @@ public class ChatRoomService {
     }
 
     /**
-     * roomId 로 검색한 채팅방에 참여중인 "유저" 리스트 반환
-     */
-    public List<String> getUserListByRoomId(String roomId) {
-        List<String> userList = new ArrayList<>();
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId);
-
-        if (chatRoom != null) {
-            Teacher teacher = chatRoom.getTeacher();
-            Parent parent = chatRoom.getParent();
-
-            if (teacher != null) {
-                String teacherName = teacher.getUser().getName();
-                Long teacherId = teacher.getUser().getId();
-                userList.add("Teacher Name: " + teacherName + ", Teacher ID: " + teacherId);
-            }
-            if (parent != null) {
-                String parentName = parent.getUser().getName();
-                Long parentId = parent.getUser().getId();
-                userList.add("Parent Name: " + parentName + ", Parent ID: " + parentId);
-            }
-        }
-        return userList;
-    }
-
-    /**
      *  채팅방 참여중인 인원수 조회
      */
+    // 채팅방 내 인원 조회 시 사용 => 수정 필요
     public int getUserCount(String roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId);
-        return (chatRoom != null) ? chatRoom.getUserCount() : 0;
+        Optional<ChatRoom> chatRoomOptional = Optional.ofNullable(chatRoomRepository.findByRoomId(roomId));
+        return chatRoomOptional.map(chatRoom -> {
+            int count = 0;
+            if (chatRoom.getTeacher() != null) {
+                count++;
+            }
+            if (chatRoom.getParent() != null) {
+                count++;
+            }
+            return count;
+        }).orElse(0);
     }
 
-    /**
-     *  roomId로 특정 채팅방 조회
-     *
-     *  변경 >> "friends의 조건들로" roomID return
-     */
-//    public ChatRoomDto findRoomById(String roomId) {
-//        return chatRoomRepository.findById(roomId);
-//    }
+    public boolean leaveRoom(String roomId, User user) {
+        Optional<ChatRoom> chatRoomOptional = Optional.ofNullable(chatRoomRepository.findByRoomId(roomId));
+        if (chatRoomOptional.isPresent()) {
+            ChatRoom chatRoom = chatRoomOptional.get();
+            if (isUserInChatRoom(chatRoom, user)) {
+                clearChatRoom(chatRoom, user);
 
-    /**
-     * user가 가진 roomId 조회
-     * @return
-     */
-//    public List<String> findParentRoomId(String email) {
-//        Long userId = parentRepository.findByEmail(email)
-//        List<String> roomIds = new ArrayList<>();
-//
-//        return roomIds;
-//    }
-
-//    public List<String> findTeacherRoomId(String email) {
-//        return roomIds;
-//    }
-
-    public boolean isParent(String email) {
-        Optional<Parent> parentOptional = parentRepository.findByUserEmail(email);
-        return parentOptional.isPresent();
+                if (chatRoom.getTeacherUserId() == null && chatRoom.getParentUserId() == null) {
+                    chatRoomRepository.delete(chatRoom);
+                    friendService.deleteRoomId(roomId);
+                } else {
+                    chatRoomRepository.save(chatRoom);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
-    public boolean isTeacher(String email) {
-        Optional<Teacher> teacherOptional = teacherRepository.findByUserEmail(email);
-        return teacherOptional.isPresent();
+    private void clearChatRoom(ChatRoom chatRoom, User user) {
+        if (isTeacher(chatRoom, user)) {
+            chatRoom.setTeacher(null);
+            chatRoom.setTeacherUserId(null);
+        }
+        if (isParent(chatRoom, user)) {
+            chatRoom.setParent(null);
+            chatRoom.setParentUserId(null);
+        }
     }
 
-    /**
-     * 모든 채팅방 조회
-     */
-    public List<ChatRoom> findAllRoom() {
-        return chatRoomRepository.findAll();
+    private boolean isUserInChatRoom(ChatRoom chatRoom, User user) {
+        return (chatRoom.getTeacher() != null && chatRoom.getTeacher().getUser().getId().equals(user.getId())) ||
+                (chatRoom.getParent() != null && chatRoom.getParent().getUser().getId().equals(user.getId()));
     }
-//    public List<ChatRoomDto> findAllRoom() {
-//        List<ChatRoomDto> chatRooms = new ArrayList<>(chatRoomMap.values());
-//        Collections.reverse(chatRooms);
-//        return chatRooms;
-//    }
+    private boolean isTeacher(ChatRoom chatRoom, User user) {
+        return chatRoom.getTeacher() != null && chatRoom.getTeacher().getUser().getId().equals(user.getId());
+    }
 
+    private boolean isParent(ChatRoom chatRoom, User user) {
+        return chatRoom.getParent() != null && chatRoom.getParent().getUser().getId().equals(user.getId());
+    }
 
-    /**
-     * 채팅방 삭제 deleteRoom(roomId)
-     */
-//    public void deleteRoom(String roomId) {
-//        chatRoomRepository.deleteById(roomId);
-//    }
+    public void deleteEmptyRooms() {
+        List<ChatRoom> emptyRooms = new ArrayList<>();
+        List<ChatRoom> rooms = chatRoomRepository.findAll();
+
+        for (ChatRoom room : rooms) {
+            if (room.getTeacher() == null && room.getParent() == null) {
+                emptyRooms.add(room);
+            }
+        }
+        chatRoomRepository.deleteAll(emptyRooms);
+    }
 
 //    public void plusUserCnt(String roomId){
 //        Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findById(roomId);

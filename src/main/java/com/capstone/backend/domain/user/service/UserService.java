@@ -296,24 +296,19 @@ public class UserService {
                 .build();
     }
 
-    // 사용자별 주간 로그인 횟수 조회
-    public long getUserWeeklyLoginCount(long userId) {
-        LocalDate today = getToday();
-        isValidUser(userId);
-        return userLoginCountRepository.sumLoginCountsByUserAndYearAndWeek(userId, today.getYear(), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
-                .orElse(0);
-    }
+//    // 사용자별 주간 로그인 횟수 조회
+//    public long getUserWeeklyLoginCount(long userId) {
+//        LocalDate today = getToday();
+//        isValidUser(userId);
+//        return userLoginCountRepository.sumLoginCountsByUserAndYearAndWeek(userId, today.getYear(), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
+//                .orElse(0);
+//    }
 
     // 전체 사용자의 주간 로그인 횟수 조회
     public long getTotalWeeklyLoginCount() {
         LocalDate today = getToday();
         return userLoginCountRepository.sumTotalLoginCountsByYearAndWeek(today.getYear(), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
                 .orElse(0);
-    }
-
-    // 전체 사용자 수 조회
-    public long getTotalUserCount() {
-        return userRepository.count();
     }
 
     private void isValidUser(long userId) {
@@ -348,5 +343,10 @@ public class UserService {
         } else {
             throw new RuntimeException("해당하는 이메일을 가진 사용자를 찾을 수 없습니다.");
         }
+    }
+
+    // 전체 유저 수 조회
+    public Long getUserCount() {
+        return userRepository.count();
     }
 }

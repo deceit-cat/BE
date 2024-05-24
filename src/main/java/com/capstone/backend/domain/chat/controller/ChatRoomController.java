@@ -38,6 +38,7 @@ import java.util.*;
 @Tag(name = "채팅방", description = "생성, 조회, 입장")
 public class ChatRoomController {
     private final ChatRoomService chatRoomService;
+    private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final TeacherRepository teacherRepository;
     private final ParentRepository parentRepository;
@@ -47,6 +48,7 @@ public class ChatRoomController {
 
     @Autowired
     public ChatRoomController(ChatRoomService chatRoomService,
+                              ChatRoomRepository chatRoomRepository,
                               UserRepository userRepository,
                               TeacherRepository teacherRepository,
                               ParentRepository parentRepository,
@@ -54,6 +56,7 @@ public class ChatRoomController {
                               FriendService friendService,
                               JwtService jwtService) {
         this.chatRoomService = chatRoomService;
+        this.chatRoomRepository = chatRoomRepository;
         this.userRepository = userRepository;
         this.teacherRepository = teacherRepository;
         this.parentRepository = parentRepository;
@@ -110,27 +113,33 @@ public class ChatRoomController {
         }
     }
 
-    @Operation(summary = "전체 채팅방 조회")
-    @GetMapping("/showAllRooms")
-    public List<ChatRoom> showAllChatRooms() {
-        try {
-            List<ChatRoom> chatRooms = chatRoomService.findAllRoom();
-            log.info("SHOW ALL CHATROOM LIST : {}", chatRoomService.findAllRoom());
-            return chatRooms;
-        } catch (Exception e) {
-            log.error("전체 채팅방 조회에서 에러 발생 : {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "전체 채팅방 조회에 실패했습니다.");
-        }
-    }
-
     /**
-     * 채팅방 내 인원 조회
+     * 채팅방 정보 조회
      */
-    @Operation(summary = "채팅방 내 인원 조회")
-    @GetMapping("/userCount/{roomId}")
-    public ResponseEntity<Integer> getUserCount(@PathVariable String roomId) {
-        int userCount = chatRoomService.getUserCount(roomId);
-        return ResponseEntity.ok(userCount);
+    @Operation(summary = "채팅방 정보 조회")
+    @GetMapping("/roomInfo/{roomId}")
+    public ResponseEntity<?> getRoomInfo(@PathVariable String roomId) {
+        Optional<ChatRoom> chatRoomOptional = Optional.ofNullable(chatRoomRepository.findByRoomId(roomId));
+        if (chatRoomOptional.isPresent()) {
+            ChatRoom chatRoom = chatRoomOptional.get();
+            ChatRoomDto chatRoomDto = new ChatRoomDto();
+            chatRoomDto.setRoomId(chatRoom.getRoomId());
+
+            if (chatRoom.getTeacher() != null) {
+                chatRoomDto.setTeacherUserId(chatRoom.getTeacher().getUser().getId());
+            } else {
+                chatRoomDto.setTeacherUserId(null);
+            }
+            if (chatRoom.getParent() != null) {
+                chatRoomDto.setParentUserId(chatRoom.getParent().getUser().getId());
+            } else {
+                chatRoomDto.setParentUserId(null);
+            }
+            return ResponseEntity.ok(chatRoomDto);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("roomId: " + roomId + "를 찾을 수 없습니다.");
+        }
     }
 
 //    // 채팅방 입장 화면
@@ -143,4 +152,32 @@ public class ChatRoomController {
 //        model.addAttribute("room", chatRoomService.findRoomById(roomId));
 //        return "chatroom";
 //    }
+
+    @Operation(summary = "채팅방 나가기")
+    @DeleteMapping("/leaveRoom/{roomId}")
+    public ResponseEntity<Map<String, Object>> leaveRoom(@RequestHeader("Authorization") String token,
+                                            @PathVariable String roomId) {
+        Map<String, Object> response = new HashMap<>();
+        if (jwtService.isTokenValid(token)) {
+            Optional<String> email = jwtService.extractEmail(token);
+            if (email.isPresent()) {
+                Optional<User> userOptional = userRepository.findByEmail(email.get());
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    boolean isDeleted = chatRoomService.leaveRoom(roomId, user);
+                    if (isDeleted) {
+                        response.put("message", user.getName() + "님이 채팅방을 나갔습니다.");
+                        response.put("roomId", roomId);
+                        return ResponseEntity.ok(response);
+                    } else {
+                        response.put("error", "채팅방에서 나가기 실패. 사용자가 채팅방에 속해있는지 확인하세요");
+                    }
+                }
+            }
+            response.put("error", "채팅방과 유저를 다시 한번 확인해주세요");
+        } else {
+            response.put("error", "유효한 토큰이 아닙니다.");
+        }
+        return ResponseEntity.badRequest().body(response);
+    }
 }

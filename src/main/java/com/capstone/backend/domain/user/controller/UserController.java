@@ -80,41 +80,38 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+//
+//    /**
+//     * 특정 사용자의 주간별 로그인 횟수를 조회
+//     *
+//     * @param userId 로그인 횟수를 조회할 사용자의 ID
+//     * @return 특정 사용자의 주간별 로그인 횟수
+//     */
+//    @Operation(summary = "특정 사용자의 주간별 로그인 횟수 조회")
+//    @GetMapping("/auth/{userId}/weekly-logins")
+//    public ResponseEntity<Long> getUserWeeklyLoginCount(@PathVariable Long userId) {
+//        return ResponseEntity.ok(userService.getUserWeeklyLoginCount(userId));
+//    }
 
     /**
-     * 특정 사용자의 주간별 로그인 횟수를 조회
-     *
-     * @param userId 로그인 횟수를 조회할 사용자의 ID
-     * @return 특정 사용자의 주간별 로그인 횟수
+     * 전체 유저의 통합 주간 로그인 횟수 조회
+     * @return
      */
-    @Operation(summary = "특정 사용자의 주간별 로그인 횟수 조회")
-    @GetMapping("/auth/{userId}/weekly-logins")
-    public ResponseEntity<Long> getUserWeeklyLoginCount(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUserWeeklyLoginCount(userId));
-    }
-
-    /**
-     * 전체 사용자의 주간별 로그인 횟수를 조회
-     *
-     * @return 전체 사용자의 주간별 로그인 횟수
-     */
-    @Operation(summary = "전체 사용자의 주간별 로그인 횟수 조회")
-    @GetMapping("/auth/weekly-logins")
+    @Operation(summary = "전체 유저의 통합 주간 로그인 횟수 조회")
+    @GetMapping("/getWeeklyLoginCount")
     public ResponseEntity<Long> getTotalWeeklyLoginCount() {
         return ResponseEntity.ok(userService.getTotalWeeklyLoginCount());
     }
 
     /**
-     * 시스템에 등록된 전체 사용자 수를 조회
-     *
-     * @return 시스템에 등록된 전체 사용자 수
+     * 시스템에 등록된 전체 유저 수 조회
+     * @return
      */
-    @Operation(summary = "전체 사용자수 조회")
-    @GetMapping("/auth/total-users")
-    public ResponseEntity<Long> getTotalUserCount() {
-        return ResponseEntity.ok(userService.getTotalUserCount());
+    @Operation(summary = "시스템에 등록된 전체 유저 수 조회")
+    @GetMapping("/getTotalUserCount")
+    public ResponseEntity<Long> getUserCount() {
+        return ResponseEntity.ok(userService.getUserCount());
     }
-
 
 //    @Autowired
 //    private JwtService jwtService;

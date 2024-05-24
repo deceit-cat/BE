@@ -37,5 +37,4 @@ public class UserLoginCount {
     public void incrementCount() {
         this.count++;
     }
-
 }

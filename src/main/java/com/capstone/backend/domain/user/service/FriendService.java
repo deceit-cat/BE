@@ -199,4 +199,12 @@ public class FriendService {
             throw new Exception("사용자 엑세스 토큰을 검증하는 도중 오류가 발생했습니다.", e);
         }
     }
+
+    public void deleteRoomId(String roomId) {
+        List<Friend> friendsWithRoomId = friendRepository.findByRoomId(roomId);
+        for (Friend friend : friendsWithRoomId) {
+            friend.setRoomId(null);
+            friendRepository.save(friend);
+        }
+    }
 }

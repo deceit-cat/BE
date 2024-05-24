@@ -4,6 +4,7 @@ import com.capstone.backend.domain.user.entity.Parent;
 import com.capstone.backend.domain.user.entity.Teacher;
 import lombok.Getter;
 import lombok.Setter;
+import org.checkerframework.checker.units.qual.C;
 
 import javax.persistence.*;
 import java.util.UUID;
@@ -20,10 +21,14 @@ public class ChatRoom {
     @OneToOne
     private Teacher teacher;
 
+    @Column(name = "teacher_user_id")
+    private Long teacherUserId;
+
     @OneToOne
     private Parent parent;
 
-    private int userCount;
+    @Column(name = "parent_user_id")
+    private Long parentUserId;
 
     public ChatRoom() {
         this.roomId = UUID.randomUUID().toString();
@@ -32,19 +37,9 @@ public class ChatRoom {
     public ChatRoom(Teacher teacher, Parent parent) {
         this();
         this.teacher = teacher;
+        this.teacherUserId = teacher.getUser().getId();
         this.parent = parent;
-        this.userCount = 2;
-    }
-
-    // 채팅방 내 인원 조회 시 사용 => 수정 필요
-    public int getUserCount() {
-        if (teacher != null && parent != null) {
-            return 2;
-        } else if (teacher != null || parent != null) {
-            return 1;
-        } else {
-            return 0;
-        }
+        this.parentUserId = parent.getUser().getId();
     }
 
     public void setRoomId(String roomId) {
