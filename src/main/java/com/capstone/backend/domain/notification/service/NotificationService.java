@@ -22,7 +22,7 @@ public class NotificationService {
     private  static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
     // 기본 타임아웃 설정
-    private static final Long DEFAULT_TIMEOUT = 60L * 1000 * 60; // 1시간
+    private static final Long DEFAULT_TIMEOUT = 6L * 60 * 60 * 1000; // 1시간
     private final EmitterRepository emitterRepository;
 
     /**

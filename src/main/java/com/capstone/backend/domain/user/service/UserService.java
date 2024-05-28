@@ -1,17 +1,11 @@
 package com.capstone.backend.domain.user.service;
 
-import com.capstone.backend.domain.chat.entity.ChatRoom;
 import com.capstone.backend.domain.chat.repository.ChatRoomRepository;
-import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.notification.service.NotificationService;
-import com.capstone.backend.domain.user.dto.ChildDto;
-import com.capstone.backend.domain.user.dto.TeacherDto;
-import com.capstone.backend.domain.user.dto.UserDto;
+import com.capstone.backend.domain.user.dto.*;
 import com.capstone.backend.domain.user.entity.*;
 import com.capstone.backend.domain.user.repository.*;
 import com.capstone.backend.global.jwt.service.JwtService;
-import lombok.RequiredArgsConstructor;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,7 +13,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.sql.Array;
 import java.time.LocalDate;
 import java.time.temporal.IsoFields;
 import java.util.*;

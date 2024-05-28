@@ -1,11 +1,9 @@
 package com.capstone.backend.domain.user.controller;
 
 import com.capstone.backend.domain.chat.service.ChatRoomService;
-import com.capstone.backend.domain.user.dto.TeacherDto;
-import com.capstone.backend.domain.user.dto.UserDto;
+import com.capstone.backend.domain.user.dto.*;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.service.UserService;
-import com.capstone.backend.global.jwt.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

@@ -24,11 +24,17 @@ public class ChatRoom {
     @Column(name = "teacher_user_id")
     private Long teacherUserId;
 
+    @Column(name = "teacher_name")
+    private String teacherName;
+
     @OneToOne
     private Parent parent;
 
     @Column(name = "parent_user_id")
     private Long parentUserId;
+
+    @Column(name = "parent_name")
+    private String parentName;
 
     public ChatRoom() {
         this.roomId = UUID.randomUUID().toString();
@@ -38,8 +44,10 @@ public class ChatRoom {
         this();
         this.teacher = teacher;
         this.teacherUserId = teacher.getUser().getId();
+        this.teacherName = teacher.getUser().getName();
         this.parent = parent;
         this.parentUserId = parent.getUser().getId();
+        this.parentName = parent.getUser().getName();
     }
 
     public void setRoomId(String roomId) {

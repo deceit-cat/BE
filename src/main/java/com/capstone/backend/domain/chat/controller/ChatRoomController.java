@@ -127,13 +127,17 @@ public class ChatRoomController {
 
             if (chatRoom.getTeacher() != null) {
                 chatRoomDto.setTeacherUserId(chatRoom.getTeacher().getUser().getId());
+                chatRoomDto.setTeacherName(chatRoom.getTeacher().getUser().getName());
             } else {
                 chatRoomDto.setTeacherUserId(null);
+                chatRoomDto.setTeacherName(null);
             }
             if (chatRoom.getParent() != null) {
                 chatRoomDto.setParentUserId(chatRoom.getParent().getUser().getId());
+                chatRoomDto.setParentName(chatRoom.getParent().getUser().getName());
             } else {
                 chatRoomDto.setParentUserId(null);
+                chatRoomDto.setParentName(null);
             }
             return ResponseEntity.ok(chatRoomDto);
         } else {
@@ -142,42 +146,36 @@ public class ChatRoomController {
         }
     }
 
-//    // 채팅방 입장 화면
-//    // 파라미터로 넘어오는 roomId 를 확인후 해당 roomId 를 기준으로
-//    // 채팅방을 찾아서 클라이언트를 chatroom 으로 보낸다.
-//    @Operation(summary = "채팅방 입장")
-//    @GetMapping("/enterRoom")
-//    public String roomDetail(Model model, @RequestParam String roomId) {
-//        log.info("roomId {}", roomId);
-//        model.addAttribute("room", chatRoomService.findRoomById(roomId));
-//        return "chatroom";
-//    }
-
     @Operation(summary = "채팅방 나가기")
     @DeleteMapping("/leaveRoom/{roomId}")
     public ResponseEntity<Map<String, Object>> leaveRoom(@RequestHeader("Authorization") String token,
-                                            @PathVariable String roomId) {
+                                                         @PathVariable String roomId) {
         Map<String, Object> response = new HashMap<>();
-        if (jwtService.isTokenValid(token)) {
-            Optional<String> email = jwtService.extractEmail(token);
-            if (email.isPresent()) {
-                Optional<User> userOptional = userRepository.findByEmail(email.get());
-                if (userOptional.isPresent()) {
-                    User user = userOptional.get();
-                    boolean isDeleted = chatRoomService.leaveRoom(roomId, user);
-                    if (isDeleted) {
-                        response.put("message", user.getName() + "님이 채팅방을 나갔습니다.");
-                        response.put("roomId", roomId);
-                        return ResponseEntity.ok(response);
-                    } else {
-                        response.put("error", "채팅방에서 나가기 실패. 사용자가 채팅방에 속해있는지 확인하세요");
-                    }
-                }
+        try {
+            if (!jwtService.isTokenValid(token)) {
+                throw new RuntimeException("유효하지 않은 토큰입니다.");
             }
-            response.put("error", "채팅방과 유저를 다시 한번 확인해주세요");
-        } else {
-            response.put("error", "유효한 토큰이 아닙니다.");
+
+            Optional<String> email = jwtService.extractEmail(token);
+            if (!email.isPresent()) {
+                throw new RuntimeException("토큰에서 이메일을 추출할 수 없습니다.");
+            }
+
+            User user = userRepository.findByEmail(email.get())
+                    .orElseThrow(() -> new RuntimeException("해당 이메일을 가진 사용자를 찾을 수 없습니다."));
+            ResponseEntity<Map<String, Object>> leaveRoomResponse = chatRoomService.leaveRoom(roomId, user);
+
+            if (leaveRoomResponse.getStatusCode().is2xxSuccessful()) {
+                return leaveRoomResponse;
+            } else {
+                throw new RuntimeException("채팅방에서 나가기 실패. 사용자가 채팅방에 속해있는지 확인하세요");
+            }
+        } catch (RuntimeException e) {
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e) {
+            response.put("error", "채팅방과 유저를 다시 한번 확인해주세요.");
+            return ResponseEntity.badRequest().body(response);
         }
-        return ResponseEntity.badRequest().body(response);
     }
 }

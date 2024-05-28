@@ -6,5 +6,7 @@ import lombok.Data;
 public class ChatRoomDto {
     private String roomId;
     private Long teacherUserId;
+    private String teacherName;
     private Long parentUserId;
+    private String parentName;
 }
