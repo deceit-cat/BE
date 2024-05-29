@@ -20,17 +20,11 @@ import java.util.*;
 @Service
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
-    private final ParentRepository parentRepository;
-    private final TeacherRepository teacherRepository;
     private final FriendService friendService;
 
     public ChatRoomService(ChatRoomRepository chatRoomRepository,
-                           ParentRepository parentRepository,
-                           TeacherRepository teacherRepository,
                            FriendService friendService) {
         this.chatRoomRepository = chatRoomRepository;
-        this.parentRepository = parentRepository;
-        this.teacherRepository = teacherRepository;
         this.friendService = friendService;
     }
 
@@ -42,24 +36,6 @@ public class ChatRoomService {
         ChatRoom chatRoom = new ChatRoom(teacher, parent);
         chatRoomRepository.save(chatRoom);
         return chatRoom;
-    }
-
-    /**
-     *  채팅방 참여중인 인원수 조회
-     */
-    // 채팅방 내 인원 조회 시 사용 => 수정 필요
-    public int getUserCount(String roomId) {
-        Optional<ChatRoom> chatRoomOptional = Optional.ofNullable(chatRoomRepository.findByRoomId(roomId));
-        return chatRoomOptional.map(chatRoom -> {
-            int count = 0;
-            if (chatRoom.getTeacher() != null) {
-                count++;
-            }
-            if (chatRoom.getParent() != null) {
-                count++;
-            }
-            return count;
-        }).orElse(0);
     }
 
     public ResponseEntity<Map<String, Object>> leaveRoom(String roomId, User user) {

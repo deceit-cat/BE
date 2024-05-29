@@ -12,8 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional
@@ -24,6 +27,7 @@ public class NotificationService {
     // 기본 타임아웃 설정
     private static final Long DEFAULT_TIMEOUT = 6L * 60 * 60 * 1000; // 1시간
     private final EmitterRepository emitterRepository;
+    private final Map<Long, List<Map<String, Object>>> friendRequests = new ConcurrentHashMap<>();
 
     /**
      * 서버의 이벤트를 클라이언트에게 보내는 메서드
@@ -34,6 +38,7 @@ public class NotificationService {
      */
     public void notify(Long userId, Map<String, Object> eventData) {
         sendToClient(userId, eventData);
+        saveFriendRequest(userId, eventData);
     }
 
     public void startSSE(Teacher teacher) {
@@ -133,4 +138,10 @@ public class NotificationService {
         emitterRepository.deleteById(userId);
     }
 
+    private void saveFriendRequest(Long userId, Map<String, Object> eventData) {
+        friendRequests.computeIfAbsent(userId, k -> new ArrayList<>()).add(eventData);
+    }
+    public List<Map<String, Object>> getFriendRequests(Long userId) {
+        return friendRequests.getOrDefault(userId, new ArrayList<>());
+    }
 }

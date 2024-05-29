@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -54,5 +55,12 @@ public class NotificationController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @Operation(summary = "친구 요청 목록 반환")
+    @GetMapping("/friends-requests/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long userId) {
+        List<Map<String, Object>> friendRequests = notificationService.getFriendRequests(userId);
+        return ResponseEntity.ok(friendRequests);
     }
 }

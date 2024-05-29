@@ -1,6 +1,10 @@
 package com.capstone.backend.domain.chat.service;
 
+import com.capstone.backend.domain.chat.dto.ChatDto;
+import com.capstone.backend.domain.chat.entity.Chat;
+import com.capstone.backend.domain.chat.repository.ChatRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
@@ -12,6 +16,12 @@ import java.util.*;
 @Slf4j
 @Service
 public class ChatService {
+    private final ChatRepository chatRepository;
+
+    @Autowired
+    public ChatService(ChatRepository chatRepository) {
+        this.chatRepository = chatRepository;
+    }
 
     /* AI 문제 소지의 발언 검출 */
     public boolean checkMessage(@Payload String message) {
@@ -46,5 +56,17 @@ public class ChatService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public void saveChat(ChatDto chatDto) {
+        Chat chat = Chat.builder()
+                .type(chatDto.getType())
+                .hidden(chatDto.getHidden())
+                .roomId(chatDto.getRoomId())
+                .sender(chatDto.getSender())
+                .message(chatDto.getMessage())
+                .time(chatDto.getTime())
+                .build();
+        chatRepository.save(chat);
     }
 }
