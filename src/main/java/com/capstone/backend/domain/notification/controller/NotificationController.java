@@ -28,7 +28,7 @@ public class NotificationController {
     private final ParentRepository parentRepository;
 
     @Operation(summary = "SSE 이벤트 구독")
-    @GetMapping(value="/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value="/subscribe/{teacherUserId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable Long userId) {
         Optional<Teacher> teacherOptional = teacherRepository.findByUserId(userId);
         if (teacherOptional.isEmpty()) {
@@ -38,7 +38,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "데이터 변동 알림(부모의 친구추가 요청)")
-    @PostMapping("/send-data/{teacherId}")
+    @PostMapping("/send-data/{teacherUserId}")
     public ResponseEntity<?> sendData(@PathVariable Long teacherId, @RequestBody Map<String, Long> requestBody) {
         Long parentUserId = requestBody.get("parentUserId");
         Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
@@ -58,7 +58,7 @@ public class NotificationController {
     }
 
     @Operation(summary = "친구 요청 목록 반환")
-    @GetMapping("/friends-requests/{userId}")
+    @GetMapping("/friends-requests/{teacherUserId}")
     public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long userId) {
         List<Map<String, Object>> friendRequests = notificationService.getFriendRequests(userId);
         return ResponseEntity.ok(friendRequests);
