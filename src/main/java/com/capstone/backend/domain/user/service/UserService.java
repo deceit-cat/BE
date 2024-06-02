@@ -342,4 +342,55 @@ public class UserService {
     public Long getUserCount() {
         return userRepository.count();
     }
+
+    public void setWorkStatus(Long userId, TeacherStatusDto teacherStatusDto) {
+        Teacher teacher = findTeacherById(userId);
+        if (teacher == null) {
+            throw new NoSuchElementException("해당 선생님을 찾을 수 없습니다.");
+        }
+
+        teacher.setDuty(teacherStatusDto.isDuty());
+        if (teacherStatusDto.isDuty()) {
+            teacher.setWorkStart(teacherStatusDto.getWorkStart());
+            teacher.setWorkEnd(teacherStatusDto.getWorkEnd());
+        } else {
+            teacher.setDisturbStart(teacherStatusDto.getDisturbStart());
+            teacher.setDisturbEnd(teacherStatusDto.getDisturbEnd());
+        }
+
+        teacherRepository.save(teacher);
+    }
+
+    public TeacherStatusDto getWorkStatus(Long teacherUserId) {
+//        Teacher teacher = findTeacherById(userId);
+//        if (teacher == null) {
+//            throw new NoSuchElementException("해당 선생님을 찾을 수 없습니다.");
+//        }
+//
+//        TeacherStatusDto teacherStatusDto = new TeacherStatusDto();
+//        teacherStatusDto.setDuty(teacher.isDuty());
+//
+//        if (teacherStatusDto.isDuty()) {
+//            teacherStatusDto.setWorkStart(teacher.getWorkStart());
+//            teacherStatusDto.setWorkEnd(teacher.getWorkEnd());
+//        } else {
+//            teacherStatusDto.setDisturbStart(teacher.getDisturbStart());
+//            teacherStatusDto.setDisturbEnd(teacher.getDisturbEnd());
+//        }
+//
+//        return teacherStatusDto;
+        Teacher teacher = findTeacherById(teacherUserId);
+        if (teacher == null) {
+            throw new NoSuchElementException("해당 선생님을 찾을 수 없습니다.");
+        }
+
+        TeacherStatusDto teacherStatusDto = new TeacherStatusDto();
+        teacherStatusDto.setDuty(teacher.isDuty());
+        teacherStatusDto.setWorkStart(teacher.getWorkStart());
+        teacherStatusDto.setWorkEnd(teacher.getWorkEnd());
+        teacherStatusDto.setDisturbStart(teacher.getDisturbStart());
+        teacherStatusDto.setDisturbEnd(teacher.getDisturbEnd());
+
+        return teacherStatusDto;
+    }
 }

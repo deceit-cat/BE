@@ -3,6 +3,7 @@ package com.capstone.backend.domain.user.controller;
 import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.dto.*;
 import com.capstone.backend.domain.user.entity.Role;
+import com.capstone.backend.domain.user.entity.Teacher;
 import com.capstone.backend.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -78,18 +79,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-//
-//    /**
-//     * 특정 사용자의 주간별 로그인 횟수를 조회
-//     *
-//     * @param userId 로그인 횟수를 조회할 사용자의 ID
-//     * @return 특정 사용자의 주간별 로그인 횟수
-//     */
-//    @Operation(summary = "특정 사용자의 주간별 로그인 횟수 조회")
-//    @GetMapping("/auth/{userId}/weekly-logins")
-//    public ResponseEntity<Long> getUserWeeklyLoginCount(@PathVariable Long userId) {
-//        return ResponseEntity.ok(userService.getUserWeeklyLoginCount(userId));
-//    }
 
     /**
      * 전체 유저의 통합 주간 로그인 횟수 조회
@@ -111,23 +100,25 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserCount());
     }
 
-//    @Autowired
-//    private JwtService jwtService;
-//    @Operation(summary = "유저 정보 요청")
-//    @GetMapping("/entry")
-//    public ResponseEntity<?> getUserInfo(@RequestHeader(name="Authorization") String token) {
-//        Optional<String> extractedEmail = jwtService.extractEmail(token);
-//        Optional<String> extractedUsername = jwtService.extractUsername(token);
-//        Optional<String> extractedRole = jwtService.extractRole(token);
-//        if (extractedEmail.isPresent() && extractedUsername.isPresent()) {
-//            Map<String, String> userInfo = new HashMap<>();
-//            userInfo.put("email", extractedEmail.get());
-//            userInfo.put("username", extractedUsername.get());
-//            userInfo.put("role", extractedRole.get());
-//            return ResponseEntity.ok(userInfo);
-//        } else {
-//            // 이메일 또는 사용자 이름이 없거나 토큰이 유효하지 않은 경우에 대한 예외 처리
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰, 이메일 또는 사용자 이름이 없습니다.");
-//        }
-//    }
+    @Operation(summary = "근무 상태 설정")
+    @PostMapping("/status/{teacherUserId}")
+    public ResponseEntity<String> setWorkStatus(@PathVariable Long teacherUserId, @RequestBody TeacherStatusDto teacherStatusDto) {
+        try {
+            userService.setWorkStatus(teacherUserId, teacherStatusDto);
+            return ResponseEntity.ok("상태가 설정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "근무 상태 조회")
+    @GetMapping("/status/{teacherUserId}")
+    public ResponseEntity<TeacherStatusDto> getWorkStatus(@PathVariable Long teacherUserId) {
+        try {
+            TeacherStatusDto teacherStatusDto = userService.getWorkStatus(teacherUserId);
+            return ResponseEntity.ok(teacherStatusDto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 }

@@ -29,17 +29,17 @@ public class NotificationController {
 
     @Operation(summary = "SSE 이벤트 구독")
     @GetMapping(value="/subscribe/{teacherUserId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@PathVariable Long userId) {
-        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(userId);
+    public SseEmitter subscribe(@PathVariable Long teacherUserId) {
+        Optional<Teacher> teacherOptional = teacherRepository.findByUserId(teacherUserId);
         if (teacherOptional.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher의 userId {" + userId + "}의 SSE 페이지가 열리지 않았습니다.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher의 userId {" + teacherUserId + "}의 SSE 페이지가 열리지 않았습니다.");
         }
-        return notificationService.subscribe(userId);
+        return notificationService.subscribe(teacherUserId);
     }
 
     @Operation(summary = "데이터 변동 알림(부모의 친구추가 요청)")
     @PostMapping("/send-data/{teacherUserId}")
-    public ResponseEntity<?> sendData(@PathVariable Long teacherId, @RequestBody Map<String, Long> requestBody) {
+    public ResponseEntity<?> sendData(@PathVariable Long teacherUserId, @RequestBody Map<String, Long> requestBody) {
         Long parentUserId = requestBody.get("parentUserId");
         Optional<Parent> parentOptional = parentRepository.findByUserId(parentUserId);
         if (parentOptional.isPresent()) {
@@ -50,7 +50,7 @@ public class NotificationController {
             eventData.put("parentName", parentName);
             eventData.put("parentId", parent.getUser().getId());
 
-            notificationService.notify(teacherId, eventData);
+            notificationService.notify(teacherUserId, eventData);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();
@@ -59,8 +59,8 @@ public class NotificationController {
 
     @Operation(summary = "친구 요청 목록 반환")
     @GetMapping("/friends-requests/{teacherUserId}")
-    public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long userId) {
-        List<Map<String, Object>> friendRequests = notificationService.getFriendRequests(userId);
+    public ResponseEntity<List<Map<String, Object>>> getFriendRequests(@PathVariable Long teacherUserId) {
+        List<Map<String, Object>> friendRequests = notificationService.getFriendRequests(teacherUserId);
         return ResponseEntity.ok(friendRequests);
     }
 }

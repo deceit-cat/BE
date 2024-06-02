@@ -1,6 +1,8 @@
 package com.capstone.backend.domain.user.entity;
 
 import lombok.*;
+import org.checkerframework.checker.units.qual.C;
+
 import javax.persistence.*;
 
 @Table(name = "TEACHERS")
@@ -22,6 +24,21 @@ public class Teacher {
 
     @Column
     private String teacherClass; // 학급
+
+    @Column
+    private boolean duty; // 0 - 근무아님 || 1 - 근무중
+
+    @Column
+    private String workStart;
+
+    @Column
+    private String workEnd;
+
+    @Column
+    private String disturbStart;
+
+    @Column
+    private String disturbEnd;
 
     public Teacher(User user, String teacherSchool, String teacherClass) {
         this.user = user;
