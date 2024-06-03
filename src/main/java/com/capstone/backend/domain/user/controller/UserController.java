@@ -134,10 +134,8 @@ public class UserController {
             User user = userService.validateAccessTokenAndGetUser(token);
 
             Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("id", user.getId());
             userInfo.put("name", user.getName());
             userInfo.put("email", user.getEmail());
-            userInfo.put("role", user.getRole().toString());
 
             return ResponseEntity.ok(userInfo);
         } catch (Exception e) {
