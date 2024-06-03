@@ -4,10 +4,13 @@ import com.capstone.backend.domain.chat.service.ChatRoomService;
 import com.capstone.backend.domain.user.dto.*;
 import com.capstone.backend.domain.user.entity.Role;
 import com.capstone.backend.domain.user.entity.Teacher;
+import com.capstone.backend.domain.user.entity.User;
 import com.capstone.backend.domain.user.service.UserService;
+import com.capstone.backend.global.jwt.service.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
     private final ChatRoomService chatRoomService;
+    private final JwtService jwtService;
 
     @Operation(summary = "회원가입")
     @PostMapping("/auth/sign-up")
@@ -119,6 +124,24 @@ public class UserController {
             return ResponseEntity.ok(teacherStatusDto);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @Operation(summary = "유저 정보 요청")
+    @GetMapping("/entry")
+    public ResponseEntity<?> getUserInfo(@RequestHeader(name="Authorization") String token) {
+        try {
+            User user = userService.validateAccessTokenAndGetUser(token);
+
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("name", user.getName());
+            userInfo.put("email", user.getEmail());
+            userInfo.put("role", user.getRole().toString());
+
+            return ResponseEntity.ok(userInfo);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
         }
     }
 }
