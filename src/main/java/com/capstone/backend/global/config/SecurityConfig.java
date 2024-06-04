@@ -25,7 +25,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.RequestCacheAwareFilter;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -57,6 +62,10 @@ public class SecurityConfig {
             .anyRequest().permitAll()
             .and()
 
+            .exceptionHandling()
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/"))
+            .and()
+
             // 소셜 로그인 설정
             .oauth2Login()
             .successHandler(oAuth2LoginSuccessHandler) // 동의하고 계속하기를 눌렀을 때 핸들러
@@ -65,13 +74,23 @@ public class SecurityConfig {
 
         http.addFilterAfter(customJsonUsernamePasswordAuthenticationFilter(), LogoutFilter.class);
         http.addFilterBefore(jwtAuthenticationProcessingFilter(), CustomJsonUsernamePasswordAuthenticationFilter.class);
-
+        http.addFilterBefore(requestCacheAwareFilter(), SecurityContextHolderAwareRequestFilter.class);
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    public RequestCache requestCache() {
+        return new HttpSessionRequestCache();
+    }
+
+    @Bean
+    public RequestCacheAwareFilter requestCacheAwareFilter() {
+        return new RequestCacheAwareFilter(requestCache());
     }
 
     /**
