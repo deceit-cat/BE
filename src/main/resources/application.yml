@@ -65,7 +65,7 @@ jwt:
   secretKey: ${JWT_TOKEN}
 
   access:
-    expiration: 3600000 # 1 hour
+    expiration: 21600000 # 6 hour
     header: Authorization
 
   refresh:
